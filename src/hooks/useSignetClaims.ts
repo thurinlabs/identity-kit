@@ -63,7 +63,7 @@ export function useSignetClaims(address: string | undefined | null) {
 
   // Combine attestation data with event log data and verify
   const { data: claims, isLoading: verifyLoading } = useQuery({
-    queryKey: ['signet-claims', address, attestations, eventData],
+    queryKey: ['signet-claims', address, attestationCount, !!eventData],
     queryFn: async (): Promise<SignetClaim[]> => {
       if (!attestations || !address) return []
 

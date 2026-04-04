@@ -20,6 +20,13 @@
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.scry-card-header:hover .scry-card-name {
+  color: var(--scry-primary);
 }
 
 .scry-card-avatar {
@@ -36,8 +43,8 @@
   height: 48px;
   border-radius: 50%;
   border: 2px solid var(--scry-border);
-  background: var(--scry-surface-deep);
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .scry-card-name {
@@ -53,6 +60,7 @@
   font-size: 11px;
   color: var(--scry-text-muted);
   margin-top: 2px;
+  word-break: break-all;
 }
 
 .scry-card-stats {
