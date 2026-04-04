@@ -1,0 +1,14 @@
+[data-scry-theme="light"] {
+  --scry-bg: #faf9f5;
+  --scry-surface: #f0efe8;
+  --scry-surface-deep: #e8e7e0;
+  --scry-border: #d0cfc4;
+  --scry-text: #2a2a22;
+  --scry-text-muted: #6b6960;
+  --scry-heading: #5a7228;
+  --scry-primary: #5a7228;
+  --scry-primary-dim: #7c9a3e;
+  --scry-secondary: #a8861e;
+  --scry-success: #5a7228;
+  --scry-error: #b83a3a;
+}
