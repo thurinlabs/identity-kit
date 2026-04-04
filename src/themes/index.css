@@ -1,3 +1,44 @@
-@import './thurin.css';
-@import './dark.css';
-@import './light.css';
+[data-scry-theme="thurin"] {
+  --scry-bg: #1a1a12;
+  --scry-surface: #252518;
+  --scry-surface-deep: #151510;
+  --scry-border: #3a3a2a;
+  --scry-text: #faf9f5;
+  --scry-text-muted: #a8a598;
+  --scry-heading: #7c9a3e;
+  --scry-primary: #7c9a3e;
+  --scry-primary-dim: #5c7a2e;
+  --scry-secondary: #c9a227;
+  --scry-success: #7c9a3e;
+  --scry-error: #d44a4a;
+}
+
+[data-scry-theme="dark"] {
+  --scry-bg: #141010;
+  --scry-surface: #1e1918;
+  --scry-surface-deep: #110e0c;
+  --scry-border: #352a22;
+  --scry-text: #ede5d8;
+  --scry-text-muted: #a09080;
+  --scry-heading: #f0ece4;
+  --scry-primary: #c9a227;
+  --scry-primary-dim: #8a7020;
+  --scry-secondary: #d4a04a;
+  --scry-success: #7c9a3e;
+  --scry-error: #d44a4a;
+}
+
+[data-scry-theme="light"] {
+  --scry-bg: #faf9f5;
+  --scry-surface: #f0efe8;
+  --scry-surface-deep: #e8e7e0;
+  --scry-border: #d0cfc4;
+  --scry-text: #2a2a22;
+  --scry-text-muted: #6b6960;
+  --scry-heading: #5a7228;
+  --scry-primary: #5a7228;
+  --scry-primary-dim: #7c9a3e;
+  --scry-secondary: #a8861e;
+  --scry-success: #5a7228;
+  --scry-error: #b83a3a;
+}

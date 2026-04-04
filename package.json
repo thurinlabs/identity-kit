@@ -12,7 +12,8 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./styles": "./dist/index.css"
+    "./styles": "./dist/index.css",
+    "./embed": "./dist/embed.global.js"
   },
   "sideEffects": [
     "*.css"

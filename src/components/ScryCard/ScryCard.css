@@ -1,5 +1,3 @@
-@import '../../themes/index.css';
-
 .scry-card {
   font-family: 'Crimson Pro', Georgia, serif;
   background: var(--scry-surface);

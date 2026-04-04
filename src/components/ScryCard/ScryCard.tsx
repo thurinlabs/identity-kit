@@ -1,6 +1,7 @@
 import { useScryIdentity } from '../../hooks/useScryIdentity'
 import { useIdentityKitConfig } from '../../context'
 import type { Theme } from '../../core/types'
+import '../../themes/index.css'
 import './ScryCard.css'
 
 function ThurinLogo() {

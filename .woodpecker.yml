@@ -1,0 +1,7 @@
+steps:
+  - name: test
+    image: node:20
+    commands:
+      - npm install
+      - npm run build
+      - npm test
