@@ -14,14 +14,16 @@ export default defineConfig([
       options.jsx = 'automatic'
     },
   },
-  // Standalone embed (all deps bundled)
+  // Standalone embed (all deps bundled, Shadow DOM isolates styles)
   {
     entry: ['src/embed.tsx'],
     format: ['iife'],
     globalName: 'ScryEmbed',
     sourcemap: true,
     noExternal: [/.*/],
-    injectStyle: true,
+    loader: {
+      '.css': 'text',
+    },
     define: {
       'process.env.NODE_ENV': '"production"',
       'global': 'globalThis',

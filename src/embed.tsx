@@ -3,6 +3,12 @@ import { IdentityKitProvider } from './provider'
 import { ScryCard } from './components/ScryCard/ScryCard'
 import type { Theme } from './core/types'
 
+// Inline CSS for Shadow DOM isolation
+import themeCss from './themes/index.css?raw'
+import cardCss from './components/ScryCard/ScryCard.css?raw'
+
+const EMBED_CSS = themeCss + '\n' + cardCss
+
 function isAddress(value: string): boolean {
   return /^0x[0-9a-fA-F]{40}$/.test(value)
 }
@@ -20,7 +26,19 @@ function renderCards() {
     const theme = (el.dataset.theme as Theme) || 'thurin'
     const props = isAddress(value) ? { address: value } : { ens: value }
 
-    const root = createRoot(el)
+    // Create Shadow DOM for style isolation
+    const shadow = el.attachShadow({ mode: 'open' })
+
+    // Inject styles into shadow
+    const style = document.createElement('style')
+    style.textContent = EMBED_CSS
+    shadow.appendChild(style)
+
+    // Create render target inside shadow
+    const container = document.createElement('div')
+    shadow.appendChild(container)
+
+    const root = createRoot(container)
     root.render(
       <IdentityKitProvider>
         <ScryCard {...props} theme={theme} />
