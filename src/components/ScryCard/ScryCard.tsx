@@ -28,9 +28,9 @@ export function ScryCard({ ens, address, theme = 'thurin' }: ScryCardProps) {
   const config = useIdentityKitConfig()
 
   const scryUrl = identity.address
-    ? `${config.scryBaseUrl}/#/eth/${identity.address}`
+    ? `${config.scryBaseUrl}/eth/${identity.address}`
     : ens
-      ? `${config.scryBaseUrl}/#/ens/${ens}`
+      ? `${config.scryBaseUrl}/ens/${ens}`
       : null
 
   if (identity.isLoading) {
