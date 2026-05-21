@@ -80,6 +80,19 @@ describe('identifyProof', () => {
       label: 'Unknown',
     })
   })
+
+  it('also accepts proof@ariadne.id (Keyoxide standard)', () => {
+    const result = identifyProof({
+      name: 'proof@ariadne.id',
+      value: 'https://mastodon.social/@alice',
+    })
+    expect(result).toMatchObject({
+      provider: 'mastodon',
+      label: 'Mastodon',
+      instance: 'mastodon.social',
+      user: 'alice',
+    })
+  })
 })
 
 describe('displayUrl', () => {
