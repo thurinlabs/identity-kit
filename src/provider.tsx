@@ -56,7 +56,7 @@ export function IdentityKitProvider({
   children,
   rpcUrl,
   neynarApiKey,
-  scryBaseUrl = 'https://scry.thurin.id',
+  scryBaseUrl = 'https://thurin.id',
 }: IdentityKitProviderProps) {
   const config = useMemo(
     () => ({ rpcUrl, neynarApiKey, scryBaseUrl }),

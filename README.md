@@ -44,7 +44,7 @@ A self-contained identity card that fetches and displays all available identity 
 | `address` | `string` | — | ETH address to look up |
 | `theme` | `'thurin' \| 'dark' \| 'light'` | `'thurin'` | Visual theme |
 
-**Displays:** ENS avatar, name, address, Signet seal count, verified proof count, EFP follower count, proof provider badges, and a link to the full [Scry](https://scry.thurin.id) profile.
+**Displays:** ENS avatar, name, address, Signet seal count, verified proof count, EFP follower count, proof provider badges, and a link to the full [Scry](https://thurin.id) profile.
 
 ## Provider
 
@@ -60,7 +60,7 @@ Wrap your app (or just the part using identity-kit) in `IdentityKitProvider`. If
 <IdentityKitProvider
   rpcUrl="https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY"
   neynarApiKey="YOUR_NEYNAR_KEY"
-  scryBaseUrl="https://scry.thurin.id"
+  scryBaseUrl="https://thurin.id"
 >
   <ScryCard ens="vitalik.eth" />
 </IdentityKitProvider>
@@ -70,7 +70,7 @@ Wrap your app (or just the part using identity-kit) in `IdentityKitProvider`. If
 |------|------|---------|-------------|
 | `rpcUrl` | `string` | publicnode | Ethereum RPC endpoint |
 | `neynarApiKey` | `string` | — | Neynar API key for Farcaster proof verification |
-| `scryBaseUrl` | `string` | `https://scry.thurin.id` | Base URL for "View on Scry" links |
+| `scryBaseUrl` | `string` | `https://thurin.id` | Base URL for "View on Scry" links |
 
 ## Hooks
 
@@ -165,8 +165,8 @@ npm test
 
 ## Links
 
-- [Scry](https://scry.thurin.id) — Identity explorer
-- [Signet](https://signet.thurin.id) — Create identity claims
+- [Scry](https://thurin.id) — Identity explorer
+- [Signet](https://thurin.id/signet) — Create identity claims
 - [Documentation](https://docs.thurin.id)
 - [Codeberg](https://codeberg.org/thurinlabs/identity-kit)
 

@@ -194,7 +194,7 @@ describe('verifyProof', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        fields: [{ value: `<a href="https://scry.thurin.id/#/pgp/${fingerprint}">scry.thurin.id/#/pgp/${fingerprint}</a>` }],
+        fields: [{ value: `<a href="https://thurin.id/#/pgp/${fingerprint}">thurin.id/#/pgp/${fingerprint}</a>` }],
         note: '',
       }),
     } as Response)
@@ -210,7 +210,7 @@ describe('verifyProof', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        fields: [{ value: `<a href="https://scry.thurin.id/#/pgp/${keyId}">scry.thurin.id/#/pgp/${keyId}</a>` }],
+        fields: [{ value: `<a href="https://thurin.id/#/pgp/${keyId}">thurin.id/#/pgp/${keyId}</a>` }],
         note: '',
       }),
     } as Response)
