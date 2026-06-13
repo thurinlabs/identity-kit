@@ -81,17 +81,12 @@ describe('identifyProof', () => {
     })
   })
 
-  it('also accepts proof@ariadne.id (Keyoxide standard)', () => {
+  it('ignores notations outside the proof@thurin.id namespace', () => {
     const result = identifyProof({
-      name: 'proof@ariadne.id',
+      name: 'proof@example.org',
       value: 'https://mastodon.social/@alice',
     })
-    expect(result).toMatchObject({
-      provider: 'mastodon',
-      label: 'Mastodon',
-      instance: 'mastodon.social',
-      user: 'alice',
-    })
+    expect(result).toBeNull()
   })
 })
 

@@ -38,10 +38,8 @@ const PROVIDERS: {
   },
 ]
 
-const ACCEPTED_NAMESPACES = new Set(['proof@thurin.id', 'proof@ariadne.id'])
-
 export function identifyProof(notation: Notation): Proof | null {
-  if (!ACCEPTED_NAMESPACES.has(notation.name)) return null
+  if (notation.name !== 'proof@thurin.id') return null
 
   for (const { provider, label, pattern, parse } of PROVIDERS) {
     const m = notation.value.match(pattern)
