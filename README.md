@@ -168,6 +168,7 @@ npm test
 - [Scry](https://thurin.id) — Identity explorer
 - [Signet](https://thurin.id/signet) — Create identity claims
 - [Documentation](https://docs.thurin.id)
+- [GitHub](https://github.com/thurinlabs/identity-kit)
 - [Codeberg](https://codeberg.org/thurinlabs/identity-kit)
 
 ## License
