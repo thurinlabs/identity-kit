@@ -1,6 +1,12 @@
 # @thurinlabs/identity-kit
 
-React SDK for embedding Thurin identity data. Drop-in components and hooks for displaying on-chain identity claims, PGP verification, social proofs, and EFP social graph data.
+The shared library for Thurin identity — the single source of truth for looking up and **verifying** on-chain identity claims, PGP key proofs, social proofs, and EFP social graph data. It powers both the [Scry](https://thurin.id) explorer and the embeddable `ScryCard`, so a "verified" result means the same thing everywhere.
+
+Three layers — use whichever fits:
+
+- **Core** — framework-agnostic functions (verify proofs, parse PGP keys, fetch EFP/claims). No React required.
+- **Hooks** — thin React wrappers around the core.
+- **ScryCard** — a drop-in identity card UI built on the hooks.
 
 A [Thurin Labs](https://thurin.id) project.
 
@@ -114,6 +120,55 @@ PGP key info and verified social proofs from keyserver.
 const { keyInfo, proofs, isLoading } = usePGPProofs('03E53D807CE38C...')
 // proofs[].provider, proofs[].status, proofs[].displayUrl
 ```
+
+## Core utilities (no React)
+
+The verification and data logic is exported as plain functions — no React, no provider. This is the layer the Scry explorer and the hooks both build on; use it directly when you need the validated data behind your own UI.
+
+### Proofs
+
+```ts
+import { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref } from '@thurinlabs/identity-kit'
+
+const proof = identifyProof({ name: 'proof@thurin.id', value: 'https://gist.github.com/alice/abc123' })
+// → { provider: 'github', label: 'GitHub', user: 'alice', gistId: 'abc123', url }
+
+const result = await verifyProof(proof, fingerprint, neynarApiKey /* only needed for Farcaster */)
+// → { verified: boolean, reason?: string }
+```
+
+`verifyProof` performs the real check per provider — including confirming the GitHub gist is **owned** by the claimed user, so a proof can't be forged by pointing at someone else's gist ID. `displayUrl` / `proofHref` / `proofSecondaryHref` build the display string and links.
+
+### PGP
+
+```ts
+import { parsePgpKey, verifyAttestation, fetchKeyByFingerprint, fetchKeyByKeyId } from '@thurinlabs/identity-kit'
+
+const keyInfo = await parsePgpKey(armoredKey)
+// → { fingerprint, userIDs, algorithm, created, expires, notations, subkeys } | null
+
+const verification = await verifyAttestation({ pgpPublicKey, pgpSignature, fingerprint, ethAddress })
+// → { verified: boolean, reason?: string }
+
+const armored = await fetchKeyByFingerprint(fingerprint) // from keys.openpgp.org
+```
+
+### EFP & claims
+
+```ts
+import { fetchEFPGraph } from '@thurinlabs/identity-kit'
+
+const graph = await fetchEFPGraph(address)
+// → { followers, following, top8: string[], hasEfp } | null
+```
+
+### Contract constants
+
+```ts
+import { REGISTRY_ADDRESS, REGISTRY_ABI, CONTRACT_DEPLOY_BLOCK } from '@thurinlabs/identity-kit'
+```
+
+Note `REGISTRY_ABI` here is read-only (events + `attestationCount` + `getAttestation`). Apps that write claims (the Signet flow) need their own ABI with the `attest`/`revoke` functions.
 
 ## Themes
 

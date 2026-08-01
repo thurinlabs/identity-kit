@@ -156,11 +156,12 @@ describe('verifyProof', () => {
     expect(result.reason).toBe('Unknown provider')
   })
 
-  it('verifies GitHub gist with matching fingerprint', async () => {
+  it('verifies GitHub gist with matching fingerprint and owner', async () => {
     const fingerprint = '03E53D807CE38C130ED42ECECD3D0D7F0C9E5FB8'
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => ({
+        owner: { login: 'alice' },
         files: { 'proof.md': { content: `openpgp4fpr:${fingerprint}` } },
       }),
     } as Response)
@@ -170,10 +171,45 @@ describe('verifyProof', () => {
     expect(result.verified).toBe(true)
   })
 
+  it('rejects GitHub gist owned by a different user (spoofed claim)', async () => {
+    const fingerprint = '03E53D807CE38C130ED42ECECD3D0D7F0C9E5FB8'
+    // Attacker puts their real fingerprint in their own gist but claims the
+    // notation points at "alice" — the gist ID resolves regardless of the URL
+    // username, so ownership must be checked.
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        owner: { login: 'mallory' },
+        files: { 'proof.md': { content: `openpgp4fpr:${fingerprint}` } },
+      }),
+    } as Response)
+
+    const proof = { provider: 'github', label: 'GitHub', url: '', user: 'alice', gistId: 'abc123' }
+    const result = await verifyProof(proof, fingerprint)
+    expect(result.verified).toBe(false)
+    expect(result.reason).toBe('Gist owner does not match claimed user')
+  })
+
+  it('rejects anonymous GitHub gist (null owner)', async () => {
+    const fingerprint = '03E53D807CE38C130ED42ECECD3D0D7F0C9E5FB8'
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        owner: null,
+        files: { 'proof.md': { content: `openpgp4fpr:${fingerprint}` } },
+      }),
+    } as Response)
+
+    const proof = { provider: 'github', label: 'GitHub', url: '', user: 'alice', gistId: 'abc123' }
+    const result = await verifyProof(proof, fingerprint)
+    expect(result.verified).toBe(false)
+  })
+
   it('rejects GitHub gist without matching fingerprint', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => ({
+        owner: { login: 'alice' },
         files: { 'proof.md': { content: 'openpgp4fpr:WRONG' } },
       }),
     } as Response)

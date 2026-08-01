@@ -96,6 +96,13 @@ async function verifyGitHub(proof: Proof, fingerprint: string): Promise<PGPVerif
     if (!resp.ok) return { verified: false, reason: `GitHub API returned ${resp.status}` }
     const data = await resp.json()
 
+    // The gist ID alone is globally unique and the username in the URL is
+    // cosmetic (GitHub redirects any owner to the right gist), so ownership
+    // must be checked explicitly or anyone can claim any account.
+    if (data.owner?.login?.toLowerCase() !== proof.user!.toLowerCase()) {
+      return { verified: false, reason: 'Gist owner does not match claimed user' }
+    }
+
     for (const file of Object.values(data.files || {}) as any[]) {
       if (file.content && containsFingerprint(file.content, fingerprint)) {
         return { verified: true }
