@@ -115,7 +115,11 @@ export function useSignetClaims(address: string | undefined | null) {
     staleTime: 300_000,
   })
 
-  const isLoading = countLoading || attestationsLoading || verifyLoading
+  // The event logs carry the PGP data verification needs, so treat them as part
+  // of loading — otherwise currentFingerprint is briefly computed as null (logs
+  // not yet in), the card paints without proofs, then reloads once logs arrive.
+  const eventLogsPending = !!address && attestationCount > 0 && eventData === undefined
+  const isLoading = countLoading || attestationsLoading || verifyLoading || eventLogsPending
 
   const activeClaims = (claims || []).filter((c) => !c.revoked)
   // The current identity is the latest claim that is both non-revoked and has

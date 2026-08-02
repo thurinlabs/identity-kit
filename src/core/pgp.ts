@@ -49,9 +49,11 @@ export async function parsePgpKey(armoredKey: string): Promise<PGPKeyInfo | null
                   ? n.value
                   : null
             if (value) {
-              const dedupeKey = `${name}:${value}`
-              if (!seen.has(dedupeKey)) {
-                seen.add(dedupeKey)
+              // Dedupe by value alone: the same proof target is often present
+              // under both proof@thurin.id and proof@ariadne.id, and should
+              // surface once, not once per namespace.
+              if (!seen.has(value)) {
+                seen.add(value)
                 notations.push({ name, value })
               }
             }
