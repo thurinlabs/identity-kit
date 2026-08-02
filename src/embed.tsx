@@ -24,6 +24,12 @@ function renderCards() {
 
     const value = el.dataset.scryCard!
     const theme = (el.dataset.theme as Theme) || 'thurin'
+    // Optional config via data attributes — everything stays client-side.
+    // data-rpc-url: any getLogs-capable Ethereum RPC (needed to verify on-chain
+    //   claims; the public fallback throttles eth_getLogs).
+    // data-neynar-key: optional, only to verify Farcaster proofs.
+    const rpcUrl = el.dataset.rpcUrl
+    const neynarApiKey = el.dataset.neynarKey
     const props = isAddress(value) ? { address: value } : { ens: value }
 
     // Create Shadow DOM for style isolation
@@ -40,7 +46,7 @@ function renderCards() {
 
     const root = createRoot(container)
     root.render(
-      <IdentityKitProvider>
+      <IdentityKitProvider rpcUrl={rpcUrl} neynarApiKey={neynarApiKey}>
         <ScryCard {...props} theme={theme} />
       </IdentityKitProvider>,
     )

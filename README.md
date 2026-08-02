@@ -184,11 +184,14 @@ Hooks-only consumers don't need to import styles.
 
 ## Embed (No React Required)
 
-For static sites, Jekyll blogs, WordPress, or any HTML page — use the standalone embed script. No React, no bundler, no config.
+For static sites, Jekyll blogs, WordPress, or any HTML page — use the standalone embed script. Everything runs client-side; there's no Thurin backend in the path.
 
 ```html
-<div data-scry-card="bendoubleu.eth" data-theme="thurin"></div>
-<div data-scry-card="0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" data-theme="dark"></div>
+<div
+  data-scry-card="bendoubleu.eth"
+  data-theme="thurin"
+  data-rpc-url="https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY"
+></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@thurinlabs/identity-kit/dist/embed.global.js"></script>
 ```
@@ -197,8 +200,10 @@ For static sites, Jekyll blogs, WordPress, or any HTML page — use the standalo
 |-----------|-------------|
 | `data-scry-card` | ENS name or ETH address to look up (required) |
 | `data-theme` | `thurin`, `dark`, or `light` (default: `thurin`) |
+| `data-rpc-url` | An Ethereum RPC that supports `eth_getLogs` — required to verify on-chain claims. The card reads the chain directly, so use your own node or any provider. (Public fallback RPCs throttle `getLogs`.) |
+| `data-neynar-key` | Optional. A Neynar API key, only to verify Farcaster proofs. Without it, Farcaster shows as unverified. |
 
-The script bundles everything (React, wagmi, viem) internally. Cards render automatically on page load and for dynamically added elements.
+The card talks directly to Ethereum, keys.openpgp.org, and each proof platform — no intermediary. Cards render automatically on page load and for dynamically added elements.
 
 ## Supported Proof Providers
 
