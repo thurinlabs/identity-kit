@@ -42,8 +42,12 @@ const PROVIDERS: {
   },
 ]
 
+// Thurin's own notation namespace plus the Keyoxide/Ariadne standard, which
+// Thurin is interoperable with — keys created with either are recognized.
+const PROOF_NAMESPACES = new Set(['proof@thurin.id', 'proof@ariadne.id'])
+
 export function identifyProof(notation: Notation): Proof | null {
-  if (notation.name !== 'proof@thurin.id') return null
+  if (!PROOF_NAMESPACES.has(notation.name)) return null
 
   for (const { provider, label, pattern, parse } of PROVIDERS) {
     const m = notation.value.match(pattern)

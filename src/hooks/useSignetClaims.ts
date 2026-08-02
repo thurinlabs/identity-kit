@@ -69,12 +69,19 @@ export function useSignetClaims(address: string | undefined | null) {
 
       const results: SignetClaim[] = []
 
+      // Match each event log to its attestation by the on-chain index it
+      // carries. The log array is block-ordered, not attestation-indexed, so
+      // positional access can pair the wrong PGP signature/key with a claim,
+      // which then fails verification.
+      const logsByIndex: Record<number, any> = {}
+      for (const l of eventData || []) logsByIndex[Number(l.args.index)] = l
+
       for (let i = 0; i < attestations.length; i++) {
         const att = attestations[i]
         if (att.status !== 'success') continue
 
         const [fingerprint, createdAt, revoked] = att.result as [string, bigint, boolean]
-        const log = (eventData || [])[i]
+        const log = logsByIndex[i]
 
         const pgpSignature = log?.args?.pgpSignature ?? null
         const pgpPublicKey = log?.args?.pgpPublicKey ?? null

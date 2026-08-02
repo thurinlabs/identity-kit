@@ -91,7 +91,15 @@ describe('identifyProof', () => {
     expect(result).toMatchObject({ provider: 'unknown' })
   })
 
-  it('ignores notations outside the proof@thurin.id namespace', () => {
+  it('identifies proofs in the proof@ariadne.id namespace (keyoxide interop)', () => {
+    const result = identifyProof({
+      name: 'proof@ariadne.id',
+      value: 'https://mastodon.social/@alice',
+    })
+    expect(result).toMatchObject({ provider: 'mastodon', user: 'alice', instance: 'mastodon.social' })
+  })
+
+  it('ignores notations outside the recognized proof namespaces', () => {
     const result = identifyProof({
       name: 'proof@example.org',
       value: 'https://mastodon.social/@alice',
