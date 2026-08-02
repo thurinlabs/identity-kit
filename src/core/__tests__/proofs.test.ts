@@ -81,12 +81,30 @@ describe('identifyProof', () => {
     })
   })
 
+  it('does not treat a Mastodon URL with userinfo as a valid instance', () => {
+    // The host here is evil.com; "mastodon.social" is only userinfo. This must
+    // not parse as a Mastodon proof pointing at mastodon.social.
+    const result = identifyProof({
+      name: 'proof@thurin.id',
+      value: 'https://mastodon.social@evil.com/@alice',
+    })
+    expect(result).toMatchObject({ provider: 'unknown' })
+  })
+
   it('ignores notations outside the proof@thurin.id namespace', () => {
     const result = identifyProof({
       name: 'proof@example.org',
       value: 'https://mastodon.social/@alice',
     })
     expect(result).toBeNull()
+  })
+
+  it('does not treat a DNS domain with userinfo as a valid domain', () => {
+    const result = identifyProof({
+      name: 'proof@thurin.id',
+      value: 'dns:victim.com@evil.com?type=TXT',
+    })
+    expect(result).toMatchObject({ provider: 'unknown' })
   })
 })
 
@@ -171,15 +189,14 @@ describe('verifyProof', () => {
     expect(result.verified).toBe(true)
   })
 
-  it('rejects GitHub gist owned by a different user (spoofed claim)', async () => {
+  it('rejects a GitHub gist owned by a different user', async () => {
     const fingerprint = '03E53D807CE38C130ED42ECECD3D0D7F0C9E5FB8'
-    // Attacker puts their real fingerprint in their own gist but claims the
-    // notation points at "alice" — the gist ID resolves regardless of the URL
-    // username, so ownership must be checked.
+    // The gist contains a valid fingerprint token but its owner does not match
+    // the claimed user; ownership must be checked, not just the token.
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        owner: { login: 'mallory' },
+        owner: { login: 'someone-else' },
         files: { 'proof.md': { content: `openpgp4fpr:${fingerprint}` } },
       }),
     } as Response)
@@ -224,12 +241,48 @@ describe('verifyProof', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        Answer: [{ data: `"openpgp4fpr:${fingerprint}"` }],
+        Answer: [{ type: 16, data: `"openpgp4fpr:${fingerprint}"` }],
       }),
     } as Response)
 
     const proof = { provider: 'dns', label: 'DNS', url: '', domain: 'example.com' }
     const result = await verifyProof(proof, fingerprint)
+    expect(result.verified).toBe(true)
+  })
+
+  it('ignores non-TXT DNS records that contain the token', async () => {
+    const fingerprint = '03E53D807CE38C130ED42ECECD3D0D7F0C9E5FB8'
+    // A CNAME (type 5) in the resolution chain carrying the token must not count.
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        Answer: [{ type: 5, data: `openpgp4fpr:${fingerprint}` }],
+      }),
+    } as Response)
+
+    const proof = { provider: 'dns', label: 'DNS', url: '', domain: 'example.com' }
+    const result = await verifyProof(proof, fingerprint)
+    expect(result.verified).toBe(false)
+  })
+
+  it('keeps scanning Farcaster casts when an earlier prefix match lacks the token', async () => {
+    const fingerprint = '03E53D807CE38C130ED42ECECD3D0D7F0C9E5FB8'
+    vi.spyOn(globalThis, 'fetch')
+      // resolveFid → numeric fid for the claimed username
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ fid: 123 }) } as Response)
+      // castsByFid → two casts share the "0xabc" prefix; only the second carries the token
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          messages: [
+            { hash: '0xabc111', data: { castAddBody: { text: 'an unrelated cast' } } },
+            { hash: '0xabc222', data: { castAddBody: { text: `openpgp4fpr:${fingerprint}` } } },
+          ],
+        }),
+      } as Response)
+
+    const proof = { provider: 'farcaster', label: 'Farcaster', url: '', user: 'alice', castHash: '0xabc' }
+    const result = await verifyProof(proof, fingerprint, 'test-neynar-key')
     expect(result.verified).toBe(true)
   })
 
@@ -262,6 +315,14 @@ describe('verifyProof', () => {
     const proof = { provider: 'mastodon', label: 'Mastodon', url: '', instance: 'mastodon.social', user: 'alice' }
     const result = await verifyProof(proof, fingerprint)
     expect(result.verified).toBe(true)
+  })
+
+  it('rejects a Mastodon proof whose instance is not a bare hostname', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+    const proof = { provider: 'mastodon', label: 'Mastodon', url: '', instance: 'mastodon.social@evil.com', user: 'alice' }
+    const result = await verifyProof(proof, '03E53D807CE38C130ED42ECECD3D0D7F0C9E5FB8')
+    expect(result.verified).toBe(false)
+    expect(fetchSpy).not.toHaveBeenCalled()
   })
 
   it('verifies Codeberg repo description', async () => {

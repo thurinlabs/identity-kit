@@ -13,14 +13,11 @@ export async function parsePgpKey(armoredKey: string): Promise<PGPKeyInfo | null
         ? new Date(expiration as number).toISOString()
         : null
 
-    // openpgp does not verify certification signatures at readKey() time — it
-    // only buckets them by issuer key ID. A key's fingerprint covers ONLY the
-    // primary key packet, so anyone can append forged user IDs and forged
-    // self-certifications (carrying arbitrary proof@thurin.id notations) to a
-    // copy of someone else's public key without changing the fingerprint.
-    // Each self-certification must be cryptographically verified against the
-    // primary key before its user ID or notations are trusted; a forger can't
-    // produce a valid signature without the private key.
+    // openpgp does not verify certification signatures when a key is parsed —
+    // it groups them by issuer key ID only. A key's fingerprint also covers
+    // only the primary key packet, not its user IDs or their certifications.
+    // Each self-certification is therefore verified against the primary key
+    // here before its user ID and notations are treated as authoritative.
     const userIDs: string[] = []
     const notations: { name: string; value: string }[] = []
     const seen = new Set<string>()

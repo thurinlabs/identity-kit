@@ -15,7 +15,9 @@ const PROVIDERS: {
   {
     provider: 'dns',
     label: 'DNS',
-    pattern: /^dns:([^?]+)\?type=TXT$/i,
+    // domain is restricted to a hostname (labels may include underscores for
+    // records like _thurin.example.com); rejects slashes, userinfo, and spaces.
+    pattern: /^dns:([a-z0-9._-]+)\?type=TXT$/i,
     parse: (m) => ({ domain: m[1] }),
   },
   {
@@ -33,7 +35,9 @@ const PROVIDERS: {
   {
     provider: 'mastodon',
     label: 'Mastodon',
-    pattern: /^https:\/\/([^/]+)\/@([^/]+)$/i,
+    // instance is restricted to a bare hostname (optional port) so a value
+    // like "mastodon.social@evil.com" can't redirect the lookup elsewhere.
+    pattern: /^https:\/\/([a-z0-9.-]+(?::\d+)?)\/@([^/@?#\s]+)$/i,
     parse: (m) => ({ instance: m[1], user: m[2] }),
   },
 ]
@@ -96,9 +100,9 @@ async function verifyGitHub(proof: Proof, fingerprint: string): Promise<PGPVerif
     if (!resp.ok) return { verified: false, reason: `GitHub API returned ${resp.status}` }
     const data = await resp.json()
 
-    // The gist ID alone is globally unique and the username in the URL is
-    // cosmetic (GitHub redirects any owner to the right gist), so ownership
-    // must be checked explicitly or anyone can claim any account.
+    // A gist is identified solely by its globally-unique ID; the username in
+    // the URL is not authoritative. Confirm the gist owner matches the claimed
+    // account before trusting the token it contains.
     if (data.owner?.login?.toLowerCase() !== proof.user!.toLowerCase()) {
       return { verified: false, reason: 'Gist owner does not match claimed user' }
     }
@@ -124,6 +128,9 @@ async function verifyDNS(proof: Proof, fingerprint: string): Promise<PGPVerifica
     const data = await resp.json()
 
     for (const answer of data.Answer || []) {
+      // TXT records only (type 16) — a CNAME or other record in the resolution
+      // chain must not be eligible to match the token.
+      if (answer.type !== 16) continue
       if (answer.data && containsFingerprint(answer.data, fingerprint)) {
         return { verified: true }
       }
@@ -176,7 +183,8 @@ async function verifyFarcaster(
           if (containsFingerprint(text, fingerprint)) {
             return { verified: true }
           }
-          return { verified: false, reason: 'Cast found but fingerprint token not in text' }
+          // A short cast-hash prefix can match multiple casts; keep scanning
+          // rather than stopping at the first prefix match without the token.
         }
       }
 
@@ -210,6 +218,13 @@ async function verifyCodeberg(proof: Proof, fingerprint: string): Promise<PGPVer
 
 async function verifyMastodon(proof: Proof, fingerprint: string): Promise<PGPVerification> {
   try {
+    // The instance host is user-supplied and interpolated into the request URL,
+    // so restrict it to a bare hostname (optional port) before use — otherwise a
+    // value such as "mastodon.social@evil.com" would send the lookup to another
+    // server while still displaying as a legitimate handle.
+    if (!proof.instance || !/^[a-z0-9.-]+(?::\d+)?$/i.test(proof.instance)) {
+      return { verified: false, reason: 'Invalid Mastodon instance host' }
+    }
     const resp = await fetch(
       `https://${proof.instance}/api/v1/accounts/lookup?acct=${encodeURIComponent(proof.user!)}`,
     )

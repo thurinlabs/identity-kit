@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 
 // A fake openpgp self-certification. `valid` controls whether its signature
-// verifies against the primary key (verify() throws on an invalid signature).
+// verifies against the primary key (verify() rejects on an invalid signature).
 function fakeCert(valid: boolean, notations: { name: string; value: string }[]) {
   return {
     signatureType: 0x13, // certPositive
@@ -12,9 +12,9 @@ function fakeCert(valid: boolean, notations: { name: string; value: string }[]) 
   }
 }
 
-// Mock openpgp.readKey to return a hand-built key: one genuine user whose
-// self-cert verifies, and one attacker-appended user whose forged self-cert
-// does not. Both carry proof notations.
+// Mock openpgp.readKey to return a hand-built key with two users: one whose
+// self-certification verifies against the primary key and one whose does not.
+// Both carry proof notations.
 vi.mock('openpgp', () => ({
   readKey: vi.fn(async () => ({
     getFingerprint: () => 'ae3aabc506cbaaa34d744fd2886704ebb2640781',
@@ -28,9 +28,9 @@ vi.mock('openpgp', () => ({
         ],
       },
       {
-        userID: { userID: 'victim-impersonation <victim@example.com>' },
+        userID: { userID: 'Unverified <unverified@example.com>' },
         selfCertifications: [
-          fakeCert(false, [{ name: 'proof@thurin.id', value: 'https://forged.example/proof' }]),
+          fakeCert(false, [{ name: 'proof@thurin.id', value: 'https://unverified.example/proof' }]),
         ],
       },
     ],
@@ -51,12 +51,12 @@ describe('parsePgpKey self-certification verification', () => {
     })
   })
 
-  it('drops user IDs and notations from forged (unverifiable) self-certifications', async () => {
+  it('drops user IDs and notations from self-certifications that do not verify', async () => {
     const info = await parsePgpKey('dummy-armored')
-    expect(info!.userIDs).not.toContain('victim-impersonation <victim@example.com>')
+    expect(info!.userIDs).not.toContain('Unverified <unverified@example.com>')
     expect(info!.notations).not.toContainEqual({
       name: 'proof@thurin.id',
-      value: 'https://forged.example/proof',
+      value: 'https://unverified.example/proof',
     })
   })
 })

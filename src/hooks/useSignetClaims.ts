@@ -111,8 +111,12 @@ export function useSignetClaims(address: string | undefined | null) {
   const isLoading = countLoading || attestationsLoading || verifyLoading
 
   const activeClaims = (claims || []).filter((c) => !c.revoked)
-  const currentFingerprint = activeClaims.length > 0
-    ? activeClaims[activeClaims.length - 1].fingerprint
+  // The current identity is the latest claim that is both non-revoked and has
+  // a verified signature binding the key to this address. A claim whose
+  // signature has not verified must not surface the key's proofs or user data.
+  const verifiedClaims = activeClaims.filter((c) => c.verification?.verified)
+  const currentFingerprint = verifiedClaims.length > 0
+    ? verifiedClaims[verifiedClaims.length - 1].fingerprint
     : null
 
   return {
