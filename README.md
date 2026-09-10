@@ -193,7 +193,7 @@ For static sites, Jekyll blogs, WordPress, or any HTML page — use the standalo
   data-rpc-url="https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY"
 ></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@thurinlabs/identity-kit/dist/embed.global.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@thurinlabs/identity-kit@0/dist/embed.global.js"></script>
 ```
 
 | Attribute | Description |
