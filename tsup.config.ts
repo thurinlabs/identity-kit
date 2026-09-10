@@ -18,7 +18,7 @@ export default defineConfig([
   {
     entry: ['src/embed.tsx'],
     format: ['iife'],
-    globalName: 'ScryEmbed',
+    globalName: 'ThurinEmbed',
     sourcemap: true,
     noExternal: [/.*/],
     loader: {

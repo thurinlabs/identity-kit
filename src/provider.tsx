@@ -56,11 +56,11 @@ export function IdentityKitProvider({
   children,
   rpcUrl,
   neynarApiKey,
-  scryBaseUrl = 'https://thurin.id',
+  baseUrl = 'https://thurin.id',
 }: IdentityKitProviderProps) {
   const config = useMemo(
-    () => ({ rpcUrl, neynarApiKey, scryBaseUrl }),
-    [rpcUrl, neynarApiKey, scryBaseUrl],
+    () => ({ rpcUrl, neynarApiKey, baseUrl }),
+    [rpcUrl, neynarApiKey, baseUrl],
   )
 
   return (

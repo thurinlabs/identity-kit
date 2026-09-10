@@ -1,12 +1,12 @@
 # @thurinlabs/identity-kit
 
-The shared library for Thurin identity — the single source of truth for looking up and **verifying** on-chain identity claims, PGP key proofs, social proofs, and EFP social graph data. It powers both the [Scry](https://thurin.id) explorer and the embeddable `ScryCard`, so a "verified" result means the same thing everywhere.
+The shared library for Thurin identity — the single source of truth for looking up and **verifying** on-chain identity claims, PGP key proofs, social proofs, and EFP social graph data. It powers both the [thurin.id](https://thurin.id) explorer and the embeddable `ThurinCard`, so a "verified" result means the same thing everywhere.
 
 Three layers — use whichever fits:
 
 - **Core** — framework-agnostic functions (verify proofs, parse PGP keys, fetch EFP/claims). No React required.
 - **Hooks** — thin React wrappers around the core.
-- **ScryCard** — a drop-in identity card UI built on the hooks.
+- **ThurinCard** — a drop-in identity card UI built on the hooks.
 
 A [Thurin Labs](https://thurin.id) project.
 
@@ -21,25 +21,25 @@ Peer dependencies: `react`, `react-dom`, `wagmi`, `viem`, `@tanstack/react-query
 ## Quick Start
 
 ```tsx
-import { IdentityKitProvider, ScryCard } from '@thurinlabs/identity-kit'
+import { IdentityKitProvider, ThurinCard } from '@thurinlabs/identity-kit'
 import '@thurinlabs/identity-kit/styles'
 
 function App() {
   return (
     <IdentityKitProvider>
-      <ScryCard ens="vitalik.eth" theme="thurin" />
+      <ThurinCard ens="vitalik.eth" theme="thurin" />
     </IdentityKitProvider>
   )
 }
 ```
 
-## ScryCard
+## ThurinCard
 
 A self-contained identity card that fetches and displays all available identity data.
 
 ```tsx
-<ScryCard ens="vitalik.eth" theme="thurin" />
-<ScryCard address="0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" theme="dark" />
+<ThurinCard ens="vitalik.eth" theme="thurin" />
+<ThurinCard address="0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" theme="dark" />
 ```
 
 **Props:**
@@ -50,7 +50,7 @@ A self-contained identity card that fetches and displays all available identity 
 | `address` | `string` | — | ETH address to look up |
 | `theme` | `'thurin' \| 'dark' \| 'light'` | `'thurin'` | Visual theme |
 
-**Displays:** ENS avatar, name, address, Signet seal count, verified proof count, EFP follower count, proof provider badges, and a link to the full [Scry](https://thurin.id) profile.
+**Displays:** ENS avatar, name, address, on-chain attestation count, verified proof count, EFP follower count, proof provider badges, and a link to the full [thurin.id](https://thurin.id) profile.
 
 ## Provider
 
@@ -59,16 +59,16 @@ Wrap your app (or just the part using identity-kit) in `IdentityKitProvider`. If
 ```tsx
 // Zero config — uses public RPC, no Farcaster verification
 <IdentityKitProvider>
-  <ScryCard ens="vitalik.eth" />
+  <ThurinCard ens="vitalik.eth" />
 </IdentityKitProvider>
 
 // With options
 <IdentityKitProvider
   rpcUrl="https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY"
   neynarApiKey="YOUR_NEYNAR_KEY"
-  scryBaseUrl="https://thurin.id"
+  baseUrl="https://thurin.id"
 >
-  <ScryCard ens="vitalik.eth" />
+  <ThurinCard ens="vitalik.eth" />
 </IdentityKitProvider>
 ```
 
@@ -76,31 +76,31 @@ Wrap your app (or just the part using identity-kit) in `IdentityKitProvider`. If
 |------|------|---------|-------------|
 | `rpcUrl` | `string` | publicnode | Ethereum RPC endpoint |
 | `neynarApiKey` | `string` | — | Neynar API key for Farcaster proof verification |
-| `scryBaseUrl` | `string` | `https://thurin.id` | Base URL for "View on Scry" links |
+| `baseUrl` | `string` | `https://thurin.id` | Base URL for "View on Thurin" links |
 
 ## Hooks
 
-For custom UI, use the hooks directly instead of `ScryCard`.
+For custom UI, use the hooks directly instead of `ThurinCard`.
 
-### useScryIdentity
+### useThurinIdentity
 
-Combined identity data — ENS, Signet claims, PGP proofs, and EFP social graph.
+Combined identity data — ENS, on-chain attestations, PGP proofs, and EFP social graph.
 
 ```tsx
-const identity = useScryIdentity('vitalik.eth')
+const identity = useThurinIdentity('vitalik.eth')
 // or
-const identity = useScryIdentity('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
+const identity = useThurinIdentity('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
 ```
 
-Returns: `ScryIdentity` with `address`, `ensName`, `ensAvatar`, `claims`, `totalClaims`, `activeClaims`, `currentFingerprint`, `pgpKeyInfo`, `proofs`, `efp`, `isLoading`, `error`.
+Returns: `ThurinIdentity` with `address`, `ensName`, `ensAvatar`, `claims`, `totalClaims`, `activeClaims`, `currentFingerprint`, `pgpKeyInfo`, `proofs`, `efp`, `isLoading`, `error`.
 
-### useSignetClaims
+### useAttestations
 
 On-chain attestation data from the PGPRegistry contract.
 
 ```tsx
 const { claims, totalClaims, activeClaims, currentFingerprint, isLoading } =
-  useSignetClaims('0xd8dA...')
+  useAttestations('0xd8dA...')
 ```
 
 ### useEFPGraph
@@ -123,7 +123,7 @@ const { keyInfo, proofs, isLoading } = usePGPProofs('03E53D807CE38C...')
 
 ## Core utilities (no React)
 
-The verification and data logic is exported as plain functions — no React, no provider. This is the layer the Scry explorer and the hooks both build on; use it directly when you need the validated data behind your own UI.
+The verification and data logic is exported as plain functions — no React, no provider. This is the layer the thurin.id explorer and the hooks both build on; use it directly when you need the validated data behind your own UI.
 
 ### Proofs
 
@@ -168,13 +168,13 @@ const graph = await fetchEFPGraph(address)
 import { REGISTRY_ADDRESS, REGISTRY_ABI, CONTRACT_DEPLOY_BLOCK } from '@thurinlabs/identity-kit'
 ```
 
-Note `REGISTRY_ABI` here is read-only (events + `attestationCount` + `getAttestation`). Apps that write claims (the Signet flow) need their own ABI with the `attest`/`revoke` functions.
+Note `REGISTRY_ABI` here is read-only (events + `attestationCount` + `getAttestation`). Apps that write claims (the attestation flow at thurin.id/attest) need their own ABI with the `attest`/`revoke` functions.
 
 ## Themes
 
-Three built-in themes: `thurin`, `dark`, `light`. All styles are scoped under `[data-scry-theme]` with `scry-` prefixed class names to avoid conflicts with your app's styles.
+Three built-in themes: `thurin`, `dark`, `light`. All styles are scoped under `[data-thurin-theme]` with `thurin-` prefixed class names to avoid conflicts with your app's styles.
 
-Import styles when using `ScryCard`:
+Import styles when using `ThurinCard`:
 
 ```tsx
 import '@thurinlabs/identity-kit/styles'
@@ -188,7 +188,7 @@ For static sites, Jekyll blogs, WordPress, or any HTML page — use the standalo
 
 ```html
 <div
-  data-scry-card="bendoubleu.eth"
+  data-thurin-card="bendoubleu.eth"
   data-theme="thurin"
   data-rpc-url="https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY"
 ></div>
@@ -198,7 +198,7 @@ For static sites, Jekyll blogs, WordPress, or any HTML page — use the standalo
 
 | Attribute | Description |
 |-----------|-------------|
-| `data-scry-card` | ENS name or ETH address to look up (required) |
+| `data-thurin-card` | ENS name or ETH address to look up (required) |
 | `data-theme` | `thurin`, `dark`, or `light` (default: `thurin`) |
 | `data-rpc-url` | An Ethereum RPC that supports `eth_getLogs` — required to verify on-chain claims. The card reads the chain directly, so use your own node or any provider. (Public fallback RPCs throttle `getLogs`.) |
 | `data-neynar-key` | Optional. A Neynar API key, only to verify Farcaster proofs. Without it, Farcaster shows as unverified. |
@@ -215,6 +215,22 @@ The card talks directly to Ethereum, keys.openpgp.org, and each proof platform �
 | Codeberg | Repository description |
 | Mastodon | Profile metadata |
 
+## Migrating from 0.7.x
+
+0.8.0 collapses the Scry / Signet sub-brands into Thurin. Renames only — no behaviour changed, and existing on-chain attestations verify exactly as before.
+
+| 0.7.x | 0.8.0 |
+|-------|-------|
+| `ScryCard` / `ScryCardProps` | `ThurinCard` / `ThurinCardProps` |
+| `useScryIdentity` | `useThurinIdentity` |
+| `useSignetClaims` | `useAttestations` |
+| `ScryIdentity` (type) | `ThurinIdentity` |
+| `SignetClaim` (type) | `Attestation` |
+| `scryBaseUrl` (provider prop) | `baseUrl` |
+| `data-scry-card` (embed) | `data-thurin-card` |
+| `[data-scry-theme]`, `.scry-*`, `--scry-*` | `[data-thurin-theme]`, `.thurin-*`, `--thurin-*` |
+| `ScryEmbed` (IIFE global) | `ThurinEmbed` |
+
 ## Development
 
 ```bash
@@ -225,8 +241,8 @@ npm test
 
 ## Links
 
-- [Scry](https://thurin.id) — Identity explorer
-- [Signet](https://thurin.id/signet) — Create identity claims
+- [Thurin](https://thurin.id) — Identity explorer
+- [Attest](https://thurin.id/attest) — Create identity claims
 - [Documentation](https://docs.thurin.id)
 - [GitHub](https://github.com/thurinlabs/identity-kit)
 - [Codeberg](https://codeberg.org/thurinlabs/identity-kit)

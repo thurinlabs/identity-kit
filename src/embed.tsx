@@ -1,11 +1,11 @@
 import { createRoot } from 'react-dom/client'
 import { IdentityKitProvider } from './provider'
-import { ScryCard } from './components/ScryCard/ScryCard'
+import { ThurinCard } from './components/ThurinCard/ThurinCard'
 import type { Theme } from './core/types'
 
 // Inline CSS for Shadow DOM isolation
 import themeCss from './themes/index.css?raw'
-import cardCss from './components/ScryCard/ScryCard.css?raw'
+import cardCss from './components/ThurinCard/ThurinCard.css?raw'
 
 const EMBED_CSS = themeCss + '\n' + cardCss
 
@@ -14,15 +14,15 @@ function isAddress(value: string): boolean {
 }
 
 function renderCards() {
-  const elements = document.querySelectorAll<HTMLElement>('[data-scry-card]')
+  const elements = document.querySelectorAll<HTMLElement>('[data-thurin-card]')
   if (elements.length === 0) return
 
   elements.forEach((el) => {
     // Skip if already rendered
-    if (el.dataset.scryRendered) return
-    el.dataset.scryRendered = 'true'
+    if (el.dataset.thurinRendered) return
+    el.dataset.thurinRendered = 'true'
 
-    const value = el.dataset.scryCard!
+    const value = el.dataset.thurinCard!
     const theme = (el.dataset.theme as Theme) || 'thurin'
     // Optional config via data attributes — everything stays client-side.
     // data-rpc-url: any getLogs-capable Ethereum RPC (needed to verify on-chain
@@ -47,7 +47,7 @@ function renderCards() {
     const root = createRoot(container)
     root.render(
       <IdentityKitProvider rpcUrl={rpcUrl} neynarApiKey={neynarApiKey}>
-        <ScryCard {...props} theme={theme} />
+        <ThurinCard {...props} theme={theme} />
       </IdentityKitProvider>,
     )
   })
@@ -65,7 +65,7 @@ const observer = new MutationObserver((mutations) => {
   for (const mutation of mutations) {
     for (const node of mutation.addedNodes) {
       if (node instanceof HTMLElement) {
-        if (node.dataset.scryCard || node.querySelector('[data-scry-card]')) {
+        if (node.dataset.thurinCard || node.querySelector('[data-thurin-card]')) {
           renderCards()
           return
         }

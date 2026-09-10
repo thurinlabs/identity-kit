@@ -1,19 +1,19 @@
-.scry-card {
+.thurin-card {
   font-family: 'Crimson Pro', Georgia, serif;
-  background: var(--scry-surface);
-  border: 1px solid var(--scry-border);
+  background: var(--thurin-surface);
+  border: 1px solid var(--thurin-border);
   border-radius: 8px;
   padding: 20px;
-  color: var(--scry-text);
+  color: var(--thurin-text);
   max-width: 380px;
   width: 100%;
 }
 
-.scry-card * {
+.thurin-card * {
   box-sizing: border-box;
 }
 
-.scry-card-header {
+.thurin-card-header {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -23,82 +23,82 @@
   cursor: pointer;
 }
 
-.scry-card-header:hover .scry-card-name {
-  color: var(--scry-primary);
+.thurin-card-header:hover .thurin-card-name {
+  color: var(--thurin-primary);
 }
 
-.scry-card-avatar {
+.thurin-card-avatar {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  border: 2px solid var(--scry-border);
+  border: 2px solid var(--thurin-border);
   object-fit: cover;
   flex-shrink: 0;
 }
 
-.scry-card-avatar-placeholder {
+.thurin-card-avatar-placeholder {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  border: 2px solid var(--scry-border);
+  border: 2px solid var(--thurin-border);
   flex-shrink: 0;
   overflow: hidden;
 }
 
-.scry-card-name {
+.thurin-card-name {
   font-family: 'Cinzel', serif;
   font-size: 18px;
   font-weight: 700;
-  color: var(--scry-heading);
+  color: var(--thurin-heading);
   line-height: 1.2;
 }
 
-.scry-card-address {
+.thurin-card-address {
   font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
-  color: var(--scry-text-muted);
+  color: var(--thurin-text-muted);
   margin-top: 2px;
   word-break: break-all;
 }
 
-.scry-card-stats {
+.thurin-card-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin-bottom: 16px;
 }
 
-.scry-card-stat {
+.thurin-card-stat {
   text-align: center;
   padding: 8px 4px;
-  background: var(--scry-surface-deep);
+  background: var(--thurin-surface-deep);
   border-radius: 4px;
 }
 
-.scry-card-stat-value {
+.thurin-card-stat-value {
   font-family: 'Cinzel', serif;
   font-size: 20px;
   font-weight: 700;
-  color: var(--scry-heading);
+  color: var(--thurin-heading);
   display: block;
 }
 
-.scry-card-stat-label {
+.thurin-card-stat-label {
   font-family: 'Share Tech Mono', monospace;
   font-size: 10px;
-  color: var(--scry-text-muted);
+  color: var(--thurin-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.scry-card-badges {
+.thurin-card-badges {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 16px;
 }
 
-.scry-card-badge {
+.thurin-card-badge {
   font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
   padding: 3px 8px;
@@ -106,31 +106,31 @@
   border: 1px solid;
 }
 
-.scry-card-badge--verified {
-  color: var(--scry-success);
-  border-color: var(--scry-success);
+.thurin-card-badge--verified {
+  color: var(--thurin-success);
+  border-color: var(--thurin-success);
 }
 
-.scry-card-badge--unverified {
-  color: var(--scry-text-muted);
-  border-color: var(--scry-border);
+.thurin-card-badge--unverified {
+  color: var(--thurin-text-muted);
+  border-color: var(--thurin-border);
 }
 
-.scry-card-link {
+.thurin-card-link {
   display: block;
   text-align: right;
   font-size: 12px;
-  color: var(--scry-text-muted);
+  color: var(--thurin-text-muted);
   text-decoration: none;
 }
 
-.scry-card-link:hover {
-  color: var(--scry-primary);
+.thurin-card-link:hover {
+  color: var(--thurin-primary);
 }
 
-.scry-card-loading {
+.thurin-card-loading {
   text-align: center;
   padding: 24px;
-  color: var(--scry-text-muted);
+  color: var(--thurin-text-muted);
   font-size: 14px;
 }

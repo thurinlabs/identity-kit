@@ -1,10 +1,10 @@
 import { useEnsAddress, useEnsName, useEnsAvatar } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
 import { normalize } from 'viem/ens'
-import { useSignetClaims } from './useSignetClaims'
+import { useAttestations } from './useAttestations'
 import { useEFPGraph } from './useEFPGraph'
 import { usePGPProofs } from './usePGPProofs'
-import type { ScryIdentity } from '../core/types'
+import type { ThurinIdentity } from '../core/types'
 
 function isAddress(value: string): boolean {
   return /^0x[0-9a-fA-F]{40}$/.test(value)
@@ -18,7 +18,7 @@ function safeNormalize(name: string): string | undefined {
   }
 }
 
-export function useScryIdentity(ensOrAddress: string | undefined | null): ScryIdentity {
+export function useThurinIdentity(ensOrAddress: string | undefined | null): ThurinIdentity {
   const isAddr = ensOrAddress ? isAddress(ensOrAddress) : false
   const ensInput = ensOrAddress && !isAddr ? safeNormalize(ensOrAddress) : undefined
 
@@ -46,14 +46,14 @@ export function useScryIdentity(ensOrAddress: string | undefined | null): ScryId
     query: { enabled: !!displayName },
   })
 
-  // Signet claims
+  // On-chain attestations
   const {
     claims,
     totalClaims,
     activeClaims,
     currentFingerprint,
     isLoading: claimsLoading,
-  } = useSignetClaims(address)
+  } = useAttestations(address)
 
   // PGP proofs (from current fingerprint)
   const {

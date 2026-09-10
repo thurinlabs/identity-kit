@@ -1,4 +1,4 @@
-export interface SignetClaim {
+export interface Attestation {
   index: number
   fingerprint: string
   createdAt: number
@@ -65,11 +65,11 @@ export interface EFPGraph {
   hasEfp: boolean
 }
 
-export interface ScryIdentity {
+export interface ThurinIdentity {
   address: string | null
   ensName: string | null
   ensAvatar: string | null
-  claims: SignetClaim[]
+  claims: Attestation[]
   totalClaims: number
   activeClaims: number
   currentFingerprint: string | null
@@ -85,5 +85,5 @@ export type Theme = 'thurin' | 'dark' | 'light'
 export interface IdentityKitConfig {
   rpcUrl?: string
   neynarApiKey?: string
-  scryBaseUrl?: string
+  baseUrl?: string
 }

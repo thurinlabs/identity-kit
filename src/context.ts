@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react'
 import type { IdentityKitConfig } from './core/types'
 
 const defaultConfig: IdentityKitConfig = {
-  scryBaseUrl: 'https://thurin.id',
+  baseUrl: 'https://thurin.id',
 }
 
 export const IdentityKitContext = createContext<IdentityKitConfig>(defaultConfig)

@@ -6,9 +6,9 @@ import { REGISTRY_ADDRESS, REGISTRY_ABI, CONTRACT_DEPLOY_BLOCK } from '../core/c
 import { getLogsChunked } from '../core/logs'
 import { verifyAttestation } from '../core/pgp'
 import { useIdentityKitConfig } from '../context'
-import type { SignetClaim } from '../core/types'
+import type { Attestation } from '../core/types'
 
-export function useSignetClaims(address: string | undefined | null) {
+export function useAttestations(address: string | undefined | null) {
   const config = useIdentityKitConfig()
 
   const { data: count, isLoading: countLoading } = useReadContract({
@@ -39,7 +39,7 @@ export function useSignetClaims(address: string | undefined | null) {
 
   // Fetch event logs for PGP data (signature + public key not available from contract reads)
   const { data: eventData } = useQuery({
-    queryKey: ['signet-logs', address],
+    queryKey: ['attestation-logs', address],
     queryFn: async () => {
       if (!address) return []
       const client = createPublicClient({
@@ -63,11 +63,11 @@ export function useSignetClaims(address: string | undefined | null) {
 
   // Combine attestation data with event log data and verify
   const { data: claims, isLoading: verifyLoading } = useQuery({
-    queryKey: ['signet-claims', address, attestationCount, !!eventData],
-    queryFn: async (): Promise<SignetClaim[]> => {
+    queryKey: ['attestations', address, attestationCount, !!eventData],
+    queryFn: async (): Promise<Attestation[]> => {
       if (!attestations || !address) return []
 
-      const results: SignetClaim[] = []
+      const results: Attestation[] = []
 
       // Match each event log to its attestation by the on-chain index it
       // carries. The log array is block-ordered, not attestation-indexed, so

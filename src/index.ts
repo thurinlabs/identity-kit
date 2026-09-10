@@ -3,12 +3,12 @@ export { IdentityKitProvider } from './provider'
 export type { IdentityKitProviderProps } from './provider'
 
 // Components
-export { ScryCard } from './components/ScryCard/ScryCard'
-export type { ScryCardProps } from './components/ScryCard/ScryCard'
+export { ThurinCard } from './components/ThurinCard/ThurinCard'
+export type { ThurinCardProps } from './components/ThurinCard/ThurinCard'
 
 // Hooks
-export { useScryIdentity } from './hooks/useScryIdentity'
-export { useSignetClaims } from './hooks/useSignetClaims'
+export { useThurinIdentity } from './hooks/useThurinIdentity'
+export { useAttestations } from './hooks/useAttestations'
 export { useEFPGraph } from './hooks/useEFPGraph'
 export { usePGPProofs } from './hooks/usePGPProofs'
 
@@ -19,8 +19,8 @@ export { fetchEFPGraph } from './core/efp'
 
 // Types
 export type {
-  ScryIdentity,
-  SignetClaim,
+  ThurinIdentity,
+  Attestation,
   PGPVerification,
   PGPKeyInfo,
   SubkeyInfo,

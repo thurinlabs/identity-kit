@@ -1,14 +1,14 @@
-[data-scry-theme="dark"] {
-  --scry-bg: #141010;
-  --scry-surface: #1e1918;
-  --scry-surface-deep: #110e0c;
-  --scry-border: #352a22;
-  --scry-text: #ede5d8;
-  --scry-text-muted: #a09080;
-  --scry-heading: #f0ece4;
-  --scry-primary: #c9a227;
-  --scry-primary-dim: #8a7020;
-  --scry-secondary: #d4a04a;
-  --scry-success: #7c9a3e;
-  --scry-error: #d44a4a;
+[data-thurin-theme="dark"] {
+  --thurin-bg: #141010;
+  --thurin-surface: #1e1918;
+  --thurin-surface-deep: #110e0c;
+  --thurin-border: #352a22;
+  --thurin-text: #ede5d8;
+  --thurin-text-muted: #a09080;
+  --thurin-heading: #f0ece4;
+  --thurin-primary: #c9a227;
+  --thurin-primary-dim: #8a7020;
+  --thurin-secondary: #d4a04a;
+  --thurin-success: #7c9a3e;
+  --thurin-error: #d44a4a;
 }
