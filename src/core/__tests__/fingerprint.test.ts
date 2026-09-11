@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { normalizeFingerprint, fingerprintToBytes, bytesToFingerprint, fingerprintHash, keyIdOf, keyIdToBytes } from '../fingerprint'
 
 const V4 = '6E0053911942A889426C1866E34D9266098F7FE7'
-const V6 = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+const V6 = '00112233445566778899aabbccddeeff0f1e2d3c4b5a69788796a5b4c3d2e1f0' // asymmetric: key id = first 8 bytes
 
 describe('fingerprint helpers', () => {
   it('normalizes case, spaces and 0x', () => {
@@ -27,7 +27,7 @@ describe('fingerprint helpers', () => {
     expect(fingerprintHash(V4)).toMatch(/^0x[0-9a-f]{64}$/)
     expect(fingerprintHash(V4)).toBe(fingerprintHash(V4.toLowerCase()))
     expect(keyIdOf(V4)).toBe('0xe34d9266098f7fe7')
-    expect(keyIdOf(V6)).toBe('0x0123456789abcdef')
+    expect(keyIdOf(V6)).toBe('0x0011223344556677') // RFC 9580: v6 key id is the high-order 8 bytes
     expect(keyIdToBytes('E34D 9266 098F 7FE7')).toBe('0xe34d9266098f7fe7')
     expect(keyIdToBytes('0xE34D9266098F7FE7')).toBe('0xe34d9266098f7fe7')
     expect(keyIdToBytes('12345')).toBeNull()

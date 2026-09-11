@@ -195,7 +195,7 @@ import { fingerprintToBytes, bytesToFingerprint, fingerprintHash, keyIdOf, keyId
 fingerprintToBytes('6E00 5391 … 7FE7')  // → '0x6e0053911942a889426c1866e34d9266098f7fe7' (attest / reattest arg)
 bytesToFingerprint('0x6e00…7fe7')       // → '6e0053911942a889426c1866e34d9266098f7fe7'
 fingerprintHash(fp)                      // → keccak256 of the raw bytes (addressesFor arg)
-keyIdOf(fp)                              // → '0xe34d9266098f7fe7' (fingerprintsForKeyId arg)
+keyIdOf(fp)                              // → '0xe34d9266098f7fe7' (fingerprintsForKeyId arg; v4 = last 8 bytes, v6 = first 8, per RFC 9580)
 ```
 
 ### Authorized writes (EIP-712)

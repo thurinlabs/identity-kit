@@ -190,6 +190,54 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "function",
+    "name": "addressesForCount",
+    "inputs": [
+      {
+        "name": "fingerprintHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "addressesForRange",
+    "inputs": [
+      {
+        "name": "fingerprintHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "start",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "count",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "attest",
     "inputs": [
       {
@@ -333,6 +381,74 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "function",
+    "name": "attestationsOfRange",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "start",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "count",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out",
+        "type": "tuple[]",
+        "internalType": "struct PGPRegistry.Attestation[]",
+        "components": [
+          {
+            "name": "fingerprint",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "createdAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "revokedAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "messageVersion",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "keyPtr",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "sigPtr",
+            "type": "address",
+            "internalType": "address"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "cancelAuthorization",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "current",
     "inputs": [
       {
@@ -405,6 +521,54 @@ export const REGISTRY_ABI = [
     "outputs": [
       {
         "name": "",
+        "type": "bytes[]",
+        "internalType": "bytes[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "fingerprintsForKeyIdCount",
+    "inputs": [
+      {
+        "name": "keyId",
+        "type": "bytes8",
+        "internalType": "bytes8"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "fingerprintsForKeyIdRange",
+    "inputs": [
+      {
+        "name": "keyId",
+        "type": "bytes8",
+        "internalType": "bytes8"
+      },
+      {
+        "name": "start",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "count",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out",
         "type": "bytes[]",
         "internalType": "bytes[]"
       }
@@ -815,6 +979,18 @@ export const REGISTRY_ABI = [
         "internalType": "uint8"
       },
       {
+        "name": "keyPtr",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "sigPtr",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
         "name": "submitter",
         "type": "address",
         "indexed": false,
@@ -846,10 +1022,41 @@ export const REGISTRY_ABI = [
         "internalType": "uint256"
       },
       {
+        "name": "oldKeyPtr",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "newKeyPtr",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
         "name": "submitter",
         "type": "address",
         "indexed": false,
         "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "NonceUsed",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "nonce",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false

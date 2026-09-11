@@ -1,3 +1,4 @@
+import { keyIdHex } from './fingerprint'
 import type { Notation, Proof, PGPVerification } from './types'
 
 const PROVIDERS: {
@@ -231,7 +232,7 @@ async function verifyMastodon(proof: Proof, fingerprint: string): Promise<PGPVer
     if (!resp.ok) return { verified: false, reason: `Mastodon API returned ${resp.status}` }
     const data = await resp.json()
 
-    const keyId = fingerprint.slice(-16)
+    const keyId = keyIdHex(fingerprint.replace(/^0x/i, '').replace(/\s+/g, '').toLowerCase())
 
     for (const field of data.fields || []) {
       const text = field.value.replace(/<[^>]*>/g, '')

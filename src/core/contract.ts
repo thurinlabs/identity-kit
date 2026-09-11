@@ -5,7 +5,7 @@ export { REGISTRY_ABI } from './abi'
  * network. (v1 lived at 0xf7a45BC662A78a6fb417ED5f52b3766cbf13EbBb on mainnet and
  * is no longer read by Thurin.)
  */
-export const REGISTRY_ADDRESS = '0x3F42806de924d3f22538ea5bC2B0b3860D27f5bB' as const
+export const REGISTRY_ADDRESS = '0x9302E02e2869e129aC8516fE5eFFd51EA3082c09' as const
 
 /** Networks the PGPRegistry is deployed on. `mainnet` is the default everywhere. */
 export type NetworkName = 'mainnet' | 'sepolia' | 'local'
