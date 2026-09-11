@@ -1,4 +1,5 @@
 import { createRoot } from 'react-dom/client'
+import { isNetworkName } from './core/contract'
 import { IdentityKitProvider } from './provider'
 import { ThurinCard } from './components/ThurinCard/ThurinCard'
 import type { Theme } from './core/types'
@@ -30,6 +31,10 @@ function renderCards() {
     // data-neynar-key: optional, only to verify Farcaster proofs.
     const rpcUrl = el.dataset.rpcUrl
     const neynarApiKey = el.dataset.neynarKey
+    // data-network: 'mainnet' (default), 'sepolia', or 'local' (anvil).
+    // data-registry-address: optional override of the registry contract address.
+    const network = isNetworkName(el.dataset.network) ? el.dataset.network : 'mainnet'
+    const registryAddress = el.dataset.registryAddress
     const props = isAddress(value) ? { address: value } : { ens: value }
 
     // Create Shadow DOM for style isolation
@@ -46,7 +51,7 @@ function renderCards() {
 
     const root = createRoot(container)
     root.render(
-      <IdentityKitProvider rpcUrl={rpcUrl} neynarApiKey={neynarApiKey}>
+      <IdentityKitProvider rpcUrl={rpcUrl} neynarApiKey={neynarApiKey} network={network} registryAddress={registryAddress}>
         <ThurinCard {...props} theme={theme} />
       </IdentityKitProvider>,
     )

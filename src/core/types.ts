@@ -1,11 +1,19 @@
 export interface Attestation {
+  /** Position in the owner's attestation history. */
   index: number
+  /** Lowercase hex fingerprint, no 0x (40 chars for v4 keys, 64 for v6). */
   fingerprint: string
+  /** Unix seconds. */
   createdAt: number
   revoked: boolean
+  /** Unix seconds, or null while active. */
+  revokedAt: number | null
+  /** Format of the clearsigned message (1 = "I control the Ethereum address: <address>"). */
+  messageVersion: number
+  /** The clearsigned message stored on-chain (null only if the payload read failed). */
   pgpSignature: string | null
+  /** The armored public key stored on-chain (null only if the payload read failed). */
   pgpPublicKey: string | null
-  txHash: string | null
   verification: PGPVerification | null
 }
 
@@ -86,4 +94,8 @@ export interface IdentityKitConfig {
   rpcUrl?: string
   neynarApiKey?: string
   baseUrl?: string
+  /** Which PGPRegistry deployment to read: 'mainnet' (default) or 'sepolia'. */
+  network?: 'mainnet' | 'sepolia' | 'local'
+  /** Override the registry address (e.g. a local deploy that landed elsewhere). */
+  registryAddress?: string
 }

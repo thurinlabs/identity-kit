@@ -118,6 +118,57 @@ export async function verifyAttestation({
   }
 }
 
+export interface StrippedKey {
+  /** Armored public key containing only the non-email user IDs. */
+  armored: string
+  /** User IDs kept (no `@`). */
+  kept: string[]
+  /** User IDs removed (contained an `@`). */
+  removed: string[]
+}
+
+const EMAIL_UID = /@/
+
+/**
+ * Remove every user ID that contains an email address, keeping the rest (and
+ * their self-certifications, so proof notations on a non-email user ID survive).
+ * Returns null when nothing would remain — openpgp needs at least one
+ * self-certified user ID to verify signatures, so such a key must not be
+ * published. The key material and subkeys are untouched; the fingerprint is
+ * unchanged.
+ */
+export async function stripEmailUserIDs(armoredKey: string): Promise<StrippedKey | null> {
+  try {
+    const { readKey } = await import('openpgp')
+    const key = await readKey({ armoredKey })
+    const kept: string[] = []
+    const removed: string[] = []
+    const users = (key as any).users.filter((u: any) => {
+      const uid: string | undefined = u.userID?.userID
+      if (!uid) return false
+      if (EMAIL_UID.test(uid)) { removed.push(uid); return false }
+      kept.push(uid)
+      return true
+    })
+    if (users.length === 0) return null
+    ;(key as any).users = users
+    return { armored: key.armor(), kept, removed }
+  } catch {
+    return null
+  }
+}
+
+/** True when any user ID on the key contains an email address. */
+export async function hasEmailUserID(armoredKey: string): Promise<boolean> {
+  try {
+    const { readKey } = await import('openpgp')
+    const key = await readKey({ armoredKey })
+    return (key as any).users.some((u: any) => EMAIL_UID.test(u.userID?.userID ?? ''))
+  } catch {
+    return false
+  }
+}
+
 const KEYSERVER_BASE = 'https://keys.openpgp.org/vks/v1'
 
 export async function fetchKeyByFingerprint(fingerprint: string): Promise<string | null> {

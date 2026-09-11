@@ -1,19 +1,27 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchKeyByFingerprint, parsePgpKey } from '../core/pgp'
+import { parsePgpKey } from '../core/pgp'
 import { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref } from '../core/proofs'
 import { useIdentityKitConfig } from '../context'
 import type { PGPKeyInfo, ProofResult } from '../core/types'
 
-export function usePGPProofs(fingerprint: string | undefined | null) {
+/**
+ * Proofs for an identity, read from the PGP key stored in its on-chain
+ * attestation. No keyserver is consulted: keys.openpgp.org only serves user
+ * IDs whose email is verified and drops non-email user IDs entirely, so it can
+ * never carry the published (non-email) identity that holds the notations.
+ *
+ * @param fingerprint the attested fingerprint (proofs must name it)
+ * @param armoredKey  the attestation's `pgpPublicKey`
+ */
+export function usePGPProofs(fingerprint: string | undefined | null, armoredKey: string | undefined | null) {
   const config = useIdentityKitConfig()
 
   const { data } = useQuery({
-    queryKey: ['pgp-proofs', fingerprint],
+    // The key is large; key the query on its length + fingerprint, which
+    // changes whenever a different attestation's key is supplied.
+    queryKey: ['pgp-proofs', fingerprint, armoredKey?.length ?? 0],
     queryFn: async (): Promise<{ keyInfo: PGPKeyInfo | null; proofs: ProofResult[] }> => {
-      if (!fingerprint) return { keyInfo: null, proofs: [] }
-
-      const armoredKey = await fetchKeyByFingerprint(fingerprint)
-      if (!armoredKey) return { keyInfo: null, proofs: [] }
+      if (!fingerprint || !armoredKey) return { keyInfo: null, proofs: [] }
 
       const keyInfo = await parsePgpKey(armoredKey)
       if (!keyInfo) return { keyInfo: null, proofs: [] }
@@ -57,7 +65,7 @@ export function usePGPProofs(fingerprint: string | undefined | null) {
 
       return { keyInfo, proofs: [...byAccount.values()] }
     },
-    enabled: !!fingerprint,
+    enabled: !!fingerprint && !!armoredKey,
     staleTime: 300_000,
   })
 
@@ -68,6 +76,6 @@ export function usePGPProofs(fingerprint: string | undefined | null) {
     // resolved yet. Using react-query's own isLoading leaves a gap while the
     // query is enabling (fingerprint just became known), during which the card
     // would briefly paint without proof badges and then pop them in.
-    isLoading: !!fingerprint && data === undefined,
+    isLoading: !!fingerprint && !!armoredKey && data === undefined,
   }
 }

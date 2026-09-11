@@ -74,9 +74,11 @@ Wrap your app (or just the part using identity-kit) in `IdentityKitProvider`. If
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `rpcUrl` | `string` | publicnode | Ethereum RPC endpoint |
+| `rpcUrl` | `string` | publicnode | Ethereum RPC endpoint. Any RPC works — v2 needs only `eth_call` |
 | `neynarApiKey` | `string` | — | Neynar API key for Farcaster proof verification |
 | `baseUrl` | `string` | `https://thurin.id` | Base URL for "View on Thurin" links |
+| `network` | `'mainnet' \| 'sepolia' \| 'local'` | `'mainnet'` | Which chain to read the PGPRegistry on (`local` = a running anvil) |
+| `registryAddress` | `string` | v2 address | Override the registry contract address |
 
 ## Hooks
 
@@ -96,11 +98,12 @@ Returns: `ThurinIdentity` with `address`, `ensName`, `ensAvatar`, `claims`, `tot
 
 ### useAttestations
 
-On-chain attestation data from the PGPRegistry contract.
+On-chain attestation data from the PGPRegistry v2 contract — the owner's history plus the stored signature and key for each claim, read with plain contract calls (no event logs), each verified off-chain.
 
 ```tsx
 const { claims, totalClaims, activeClaims, currentFingerprint, isLoading } =
   useAttestations('0xd8dA...')
+// claims[].{ index, fingerprint, createdAt, revoked, revokedAt, messageVersion, pgpSignature, pgpPublicKey, verification }
 ```
 
 ### useEFPGraph
@@ -114,12 +117,14 @@ const { efp, isLoading } = useEFPGraph('0xd8dA...')
 
 ### usePGPProofs
 
-PGP key info and verified social proofs from keyserver.
+PGP key info and verified social proofs, read from the key stored in the identity's on-chain attestation. No keyserver is consulted.
 
 ```tsx
-const { keyInfo, proofs, isLoading } = usePGPProofs('03E53D807CE38C...')
+const { keyInfo, proofs, isLoading } = usePGPProofs(fingerprint, attestation.pgpPublicKey)
 // proofs[].provider, proofs[].status, proofs[].displayUrl
 ```
+
+`useThurinIdentity` wires this up for you from the current attestation.
 
 ## Core utilities (no React)
 
@@ -142,7 +147,7 @@ const result = await verifyProof(proof, fingerprint, neynarApiKey /* only needed
 ### PGP
 
 ```ts
-import { parsePgpKey, verifyAttestation, fetchKeyByFingerprint, fetchKeyByKeyId } from '@thurinlabs/identity-kit'
+import { parsePgpKey, verifyAttestation, stripEmailUserIDs, hasEmailUserID } from '@thurinlabs/identity-kit'
 
 const keyInfo = await parsePgpKey(armoredKey)
 // → { fingerprint, userIDs, algorithm, created, expires, notations, subkeys } | null
@@ -150,8 +155,16 @@ const keyInfo = await parsePgpKey(armoredKey)
 const verification = await verifyAttestation({ pgpPublicKey, pgpSignature, fingerprint, ethAddress })
 // → { verified: boolean, reason?: string }
 
-const armored = await fetchKeyByFingerprint(fingerprint) // from keys.openpgp.org
+// Prepare a key for publishing: drop every user ID that contains an email address.
+const stripped = await stripEmailUserIDs(armoredKey)
+// → { armored, kept: ['thurin'], removed: ['Alice <alice@example.com>'] } | null (null = nothing would remain)
+
+await hasEmailUserID(armoredKey) // → true if any user ID contains an @
 ```
+
+**Published identity.** An attestation stores the armored key on-chain, permanently and publicly. Since 0.9.0 the intended shape is a key whose only user ID is a non-email one (any name — `thurin` is the suggestion), carrying the `proof@thurin.id` notations. `stripEmailUserIDs` produces that from a normal export; the stripped key still verifies (`verifyAttestation` needs at least one self-certified user ID, so a key with none is rejected) and keeps the notations on the user ID it retains. Proofs are then read from the on-chain key, never from a keyserver.
+
+`fetchKeyByFingerprint` / `fetchKeyByKeyId` (keys.openpgp.org) remain exported for key-ID → fingerprint resolution, but note that keyserver serves unverified-email keys as bare packets and drops non-email user IDs, so it cannot supply a published identity.
 
 ### EFP & claims
 
@@ -162,13 +175,46 @@ const graph = await fetchEFPGraph(address)
 // → { followers, following, top8: string[], hasEfp } | null
 ```
 
-### Contract constants
+### Contract
 
 ```ts
-import { REGISTRY_ADDRESS, REGISTRY_ABI, CONTRACT_DEPLOY_BLOCK } from '@thurinlabs/identity-kit'
+import { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry } from '@thurinlabs/identity-kit'
+
+getRegistry('sepolia') // → { chainId: 11155111, address, deployBlock, explorerUrl, defaultRpcUrl }
 ```
 
-Note `REGISTRY_ABI` here is read-only (events + `attestationCount` + `getAttestation`). Apps that write claims (the attestation flow at thurin.id/attest) need their own ABI with the `attest`/`revoke` functions.
+`REGISTRY_ABI` is the complete v2 ABI (reads and writes), so apps that publish claims use the same one. The v2 registry is deployed with CREATE2 and has the same address on every network.
+
+### Fingerprints and key IDs
+
+The v2 registry takes raw fingerprint bytes and indexes by their hash and by long key ID:
+
+```ts
+import { fingerprintToBytes, bytesToFingerprint, fingerprintHash, keyIdOf, keyIdToBytes } from '@thurinlabs/identity-kit'
+
+fingerprintToBytes('6E00 5391 … 7FE7')  // → '0x6e0053911942a889426c1866e34d9266098f7fe7' (attest / reattest arg)
+bytesToFingerprint('0x6e00…7fe7')       // → '6e0053911942a889426c1866e34d9266098f7fe7'
+fingerprintHash(fp)                      // → keccak256 of the raw bytes (addressesFor arg)
+keyIdOf(fp)                              // → '0xe34d9266098f7fe7' (fingerprintsForKeyId arg)
+```
+
+### Authorized writes (EIP-712)
+
+Every write has a `…For` twin that anyone can submit with the owner's signature — for cold wallets, a CLI, or a sponsor. The helpers build exactly the typed data the contract verifies:
+
+```ts
+import { attestTypedData, authorizationDigest } from '@thurinlabs/identity-kit'
+import { signTypedData } from '@wagmi/core'
+
+const nonce = await readContract({ ..., functionName: 'nonces', args: [owner] })
+const typedData = attestTypedData(chainId, registryAddress, {
+  owner, fingerprint, pgpSignature, pgpPublicKey, nonce, deadline: BigInt(Math.floor(Date.now() / 1000) + 3600),
+})
+const signature = await signTypedData(config, typedData)
+// anyone: attestFor(owner, fingerprintBytes, sigBytes, keyBytes, deadline, signature)
+```
+
+Also `reattestTypedData`, `updateKeyTypedData`, `revokeTypedData`, `setRecordTypedData`, and `recordKind(name)` for the `bytes32 kind` of a record.
 
 ## Themes
 
@@ -200,10 +246,12 @@ For static sites, Jekyll blogs, WordPress, or any HTML page — use the standalo
 |-----------|-------------|
 | `data-thurin-card` | ENS name or ETH address to look up (required) |
 | `data-theme` | `thurin`, `dark`, or `light` (default: `thurin`) |
-| `data-rpc-url` | An Ethereum RPC that supports `eth_getLogs` — required to verify on-chain claims. The card reads the chain directly, so use your own node or any provider. (Public fallback RPCs throttle `getLogs`.) |
+| `data-rpc-url` | Optional. Any Ethereum RPC; the card reads the v2 registry with plain calls, so the keyless public default works. |
 | `data-neynar-key` | Optional. A Neynar API key, only to verify Farcaster proofs. Without it, Farcaster shows as unverified. |
+| `data-network` | Optional. `sepolia` or `local` instead of mainnet. |
+| `data-registry-address` | Optional. Override the registry contract address. |
 
-The card talks directly to Ethereum, keys.openpgp.org, and each proof platform — no intermediary. Cards render automatically on page load and for dynamically added elements.
+The card talks directly to Ethereum and each proof platform — no intermediary, no keyserver. Cards render automatically on page load and for dynamically added elements.
 
 ## Supported Proof Providers
 
@@ -214,6 +262,31 @@ The card talks directly to Ethereum, keys.openpgp.org, and each proof platform �
 | Farcaster | Public cast (requires Neynar API key) |
 | Codeberg | Repository description |
 | Mastodon | Profile metadata |
+
+## Migrating from 0.9.x
+
+1.0.0 reads the **PGPRegistry v2** contract. The v1 registry is no longer read.
+
+| 0.9.x | 1.0.0 |
+|-------|-------|
+| `REGISTRY_ABI` (v1, reads only) | v2 ABI, reads + writes |
+| `CONTRACT_DEPLOY_BLOCK` | removed (no log scans) |
+| `Attestation.txHash` | removed; `revokedAt` and `messageVersion` added |
+| `rpcUrl` needed `eth_getLogs` | any RPC |
+| — | `local` network, `registryAddress` prop / `data-registry-address` |
+| — | fingerprint helpers, EIP-712 authorization helpers |
+
+## Migrating from 0.8.x
+
+0.9.0 moves proofs to the on-chain key and adds key-preparation helpers.
+
+| 0.8.x | 0.9.0 |
+|-------|-------|
+| `usePGPProofs(fingerprint)` — fetched the key from keys.openpgp.org | `usePGPProofs(fingerprint, armoredKey)` — parses the supplied (on-chain) key |
+| — | `stripEmailUserIDs(armoredKey)`, `hasEmailUserID(armoredKey)` |
+| mainnet only | `network` prop / `data-network` attribute; `NETWORKS`, `getRegistry()` |
+
+`useThurinIdentity`, `ThurinCard`, and the embed need no changes; they pass the attestation's key through automatically.
 
 ## Migrating from 0.7.x
 

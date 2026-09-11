@@ -1,5 +1,6 @@
 import { useEnsAddress, useEnsName, useEnsAvatar } from 'wagmi'
-import { mainnet } from 'wagmi/chains'
+import { useIdentityKitConfig } from '../context'
+import { chainFor } from '../provider'
 import { normalize } from 'viem/ens'
 import { useAttestations } from './useAttestations'
 import { useEFPGraph } from './useEFPGraph'
@@ -19,13 +20,14 @@ function safeNormalize(name: string): string | undefined {
 }
 
 export function useThurinIdentity(ensOrAddress: string | undefined | null): ThurinIdentity {
+  const chain = chainFor(useIdentityKitConfig().network)
   const isAddr = ensOrAddress ? isAddress(ensOrAddress) : false
   const ensInput = ensOrAddress && !isAddr ? safeNormalize(ensOrAddress) : undefined
 
   // Resolve ENS → address
   const { data: resolvedAddress } = useEnsAddress({
     name: ensInput,
-    chainId: mainnet.id,
+    chainId: chain.id,
     query: { enabled: !!ensInput },
   })
 
@@ -34,7 +36,7 @@ export function useThurinIdentity(ensOrAddress: string | undefined | null): Thur
   // Reverse resolve address → ENS
   const { data: ensName } = useEnsName({
     address: address as `0x${string}` | undefined,
-    chainId: mainnet.id,
+    chainId: chain.id,
     query: { enabled: !!address },
   })
 
@@ -42,7 +44,7 @@ export function useThurinIdentity(ensOrAddress: string | undefined | null): Thur
 
   const { data: ensAvatar } = useEnsAvatar({
     name: displayName ? safeNormalize(displayName) : undefined,
-    chainId: mainnet.id,
+    chainId: chain.id,
     query: { enabled: !!displayName },
   })
 
@@ -55,12 +57,17 @@ export function useThurinIdentity(ensOrAddress: string | undefined | null): Thur
     isLoading: claimsLoading,
   } = useAttestations(address)
 
-  // PGP proofs (from current fingerprint)
+  // PGP proofs come from the key stored in the current attestation — the
+  // latest claim that is active and whose signature verified (the same rule
+  // useAttestations uses to pick currentFingerprint).
+  const currentClaim = [...claims].reverse().find(
+    (c) => !c.revoked && c.verification?.verified && c.fingerprint === currentFingerprint,
+  )
   const {
     keyInfo: pgpKeyInfo,
     proofs,
     isLoading: proofsLoading,
-  } = usePGPProofs(currentFingerprint)
+  } = usePGPProofs(currentFingerprint, currentClaim?.pgpPublicKey ?? null)
 
   // EFP social graph
   const { efp, isLoading: efpLoading } = useEFPGraph(address)

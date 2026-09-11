@@ -14,8 +14,21 @@ export { usePGPProofs } from './hooks/usePGPProofs'
 
 // Core utilities
 export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref } from './core/proofs'
-export { parsePgpKey, verifyAttestation, fetchKeyByFingerprint, fetchKeyByKeyId } from './core/pgp'
+export { parsePgpKey, verifyAttestation, stripEmailUserIDs, hasEmailUserID, fetchKeyByFingerprint, fetchKeyByKeyId } from './core/pgp'
+export type { StrippedKey } from './core/pgp'
 export { fetchEFPGraph } from './core/efp'
+export {
+  normalizeFingerprint, fingerprintToBytes, bytesToFingerprint, fingerprintHash, keyIdOf, keyIdToBytes,
+} from './core/fingerprint'
+export {
+  EIP712_NAME, EIP712_VERSION, AUTHORIZATION_TYPES, registryDomain,
+  attestTypedData, reattestTypedData, updateKeyTypedData, revokeTypedData, setRecordTypedData,
+  authorizationDigest, recordKind,
+} from './core/authorization'
+export type {
+  AuthorizationAction, AttestAuthorization, ReattestAuthorization, UpdateKeyAuthorization,
+  RevokeAuthorization, SetRecordAuthorization,
+} from './core/authorization'
 
 // Types
 export type {
@@ -33,4 +46,6 @@ export type {
 } from './core/types'
 
 // Constants
-export { REGISTRY_ADDRESS, REGISTRY_ABI, CONTRACT_DEPLOY_BLOCK } from './core/contract'
+export { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry, isNetworkName } from './core/contract'
+export type { NetworkName, RegistryDeployment } from './core/contract'
+export { chainFor } from './provider'
