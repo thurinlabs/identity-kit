@@ -14,6 +14,14 @@ const PROVIDERS: {
     parse: (m) => ({ user: m[1], gistId: m[2] }),
   },
   {
+    // A repository's description — the form an organisation can use, since
+    // gists belong to user accounts only. Same shape as the Codeberg proof.
+    provider: 'github',
+    label: 'GitHub',
+    pattern: /^https:\/\/github\.com\/([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+)$/i,
+    parse: (m) => ({ user: m[1], repo: m[2] }),
+  },
+  {
     provider: 'dns',
     label: 'DNS',
     // domain is restricted to a hostname (labels may include underscores for
@@ -96,6 +104,7 @@ function containsFingerprintUrl(text: string, fingerprint: string): boolean {
 }
 
 async function verifyGitHub(proof: Proof, fingerprint: string): Promise<PGPVerification> {
+  if (proof.repo) return verifyGitHubRepo(proof, fingerprint)
   try {
     const resp = await fetch(`https://api.github.com/gists/${proof.gistId}`)
     if (!resp.ok) return { verified: false, reason: `GitHub API returned ${resp.status}` }
@@ -114,6 +123,30 @@ async function verifyGitHub(proof: Proof, fingerprint: string): Promise<PGPVerif
       }
     }
     return { verified: false, reason: 'Fingerprint token not found in gist' }
+  } catch (err: any) {
+    return { verified: false, reason: `GitHub fetch failed: ${err.message}` }
+  }
+}
+
+async function verifyGitHubRepo(proof: Proof, fingerprint: string): Promise<PGPVerification> {
+  try {
+    const resp = await fetch(
+      `https://api.github.com/repos/${encodeURIComponent(proof.user!)}/${encodeURIComponent(proof.repo!)}`,
+    )
+    if (!resp.ok) return { verified: false, reason: `GitHub API returned ${resp.status}` }
+    const data = await resp.json()
+
+    // GitHub follows renames and redirects, so the API may answer for a repo
+    // under a different owner than the URL names. Only trust it if the owner
+    // is the account being claimed.
+    if (data.owner?.login?.toLowerCase() !== proof.user!.toLowerCase()) {
+      return { verified: false, reason: 'Repository owner does not match claimed account' }
+    }
+
+    if (data.description && containsFingerprint(data.description, fingerprint)) {
+      return { verified: true }
+    }
+    return { verified: false, reason: 'Fingerprint token not found in repository description' }
   } catch (err: any) {
     return { verified: false, reason: `GitHub fetch failed: ${err.message}` }
   }

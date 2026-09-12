@@ -258,7 +258,7 @@ The card talks directly to Ethereum and each proof platform — no intermediary,
 
 | Provider | Proof Method |
 |----------|-------------|
-| GitHub | Public gist |
+| GitHub | Public gist, or a repository description (the form an organisation can use) |
 | DNS | TXT record |
 | Farcaster | Public cast (requires Neynar API key) |
 | Codeberg | Repository description |

@@ -339,3 +339,53 @@ describe('verifyProof', () => {
     expect(result.verified).toBe(true)
   })
 })
+
+describe('GitHub repository proofs (organisations)', () => {
+  const fingerprint = 'ABCDEF1234567890ABCDEF1234567890ABCDEF12'
+
+  beforeEach(() => { vi.restoreAllMocks() })
+
+  it('identifies a repository URL as a GitHub proof with a repo, not a gist', () => {
+    const result = identifyProof({ name: 'proof@thurin.id', value: 'https://github.com/thurinlabs/thurin-proof' })
+    expect(result).toMatchObject({ provider: 'github', user: 'thurinlabs', repo: 'thurin-proof' })
+    expect(result?.gistId).toBeUndefined()
+    expect(displayUrl(result!)).toBe('thurinlabs')
+    expect(proofHref(result!)).toBe('https://github.com/thurinlabs')
+    expect(proofSecondaryHref(result!)).toBe('https://github.com/thurinlabs/thurin-proof')
+  })
+
+  it('does not match deeper GitHub paths', () => {
+    const result = identifyProof({ name: 'proof@thurin.id', value: 'https://github.com/thurinlabs/thurin-proof/blob/main/README.md' })
+    expect(result?.provider).toBe('unknown')
+  })
+
+  it('verifies when the description carries the token and the owner matches', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ owner: { login: 'ThurinLabs' }, description: `thurin-id=openpgp4fpr:${fingerprint}` }),
+    } as Response)
+    const proof = { provider: 'github', label: 'GitHub', url: '', user: 'thurinlabs', repo: 'thurin-proof' }
+    expect((await verifyProof(proof, fingerprint)).verified).toBe(true)
+    expect(globalThis.fetch).toHaveBeenCalledWith('https://api.github.com/repos/thurinlabs/thurin-proof')
+  })
+
+  it('rejects a repository that GitHub redirected to another owner', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ owner: { login: 'someone-else' }, description: `thurin-id=openpgp4fpr:${fingerprint}` }),
+    } as Response)
+    const proof = { provider: 'github', label: 'GitHub', url: '', user: 'thurinlabs', repo: 'thurin-proof' }
+    const result = await verifyProof(proof, fingerprint)
+    expect(result.verified).toBe(false)
+    expect(result.reason).toMatch(/owner/i)
+  })
+
+  it('rejects when the description lacks the token', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ owner: { login: 'thurinlabs' }, description: 'just a repo' }),
+    } as Response)
+    const proof = { provider: 'github', label: 'GitHub', url: '', user: 'thurinlabs', repo: 'thurin-proof' }
+    expect((await verifyProof(proof, fingerprint)).verified).toBe(false)
+  })
+})
