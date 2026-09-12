@@ -26,11 +26,14 @@ function renderCards() {
     const value = el.dataset.thurinCard!
     const theme = (el.dataset.theme as Theme) || 'thurin'
     // Optional config via data attributes — everything stays client-side.
-    // data-rpc-url: any getLogs-capable Ethereum RPC (needed to verify on-chain
-    //   claims; the public fallback throttles eth_getLogs).
+    // data-rpc-url: any Ethereum RPC (the v2 registry needs only eth_call, so the
+    //   keyless public default works).
     // data-neynar-key: optional, only to verify Farcaster proofs.
+    // data-base-url: where "View on Thurin" points (default https://thurin.id);
+    //   a page served from ENS sets its own name here so the link stays on ENS.
     const rpcUrl = el.dataset.rpcUrl
     const neynarApiKey = el.dataset.neynarKey
+    const baseUrl = el.dataset.baseUrl
     // data-network: 'mainnet' (default), 'sepolia', or 'local' (anvil).
     // data-registry-address: optional override of the registry contract address.
     const network = isNetworkName(el.dataset.network) ? el.dataset.network : 'mainnet'
@@ -50,11 +53,18 @@ function renderCards() {
     shadow.appendChild(container)
 
     const root = createRoot(container)
-    root.render(
-      <IdentityKitProvider rpcUrl={rpcUrl} neynarApiKey={neynarApiKey} network={network} registryAddress={registryAddress}>
-        <ThurinCard {...props} theme={theme} />
-      </IdentityKitProvider>,
-    )
+    const render = (t: Theme) =>
+      root.render(
+        <IdentityKitProvider rpcUrl={rpcUrl} neynarApiKey={neynarApiKey} network={network} registryAddress={registryAddress} baseUrl={baseUrl}>
+          <ThurinCard {...props} theme={t} />
+        </IdentityKitProvider>,
+      )
+    render(theme)
+
+    // A host page that switches themes sets data-theme on the element; follow it.
+    new MutationObserver(() => {
+      render((el.dataset.theme as Theme) || 'thurin')
+    }).observe(el, { attributes: true, attributeFilter: ['data-theme'] })
   })
 }
 

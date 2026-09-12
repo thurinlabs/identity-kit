@@ -1,11 +1,32 @@
 import type { PGPKeyInfo, PGPVerification } from './types'
 
+/** Human-readable algorithm for a key or subkey packet: "Ed25519", "Cv25519", "RSA 4096", "NIST P-256", … */
+function algorithmName(keyOrSubkey: any): string {
+  try {
+    const info = keyOrSubkey.getAlgorithmInfo() as { algorithm: string; bits?: number; curve?: string }
+    const curve = (info.curve || '').toLowerCase()
+    if (curve.startsWith('ed25519') || info.algorithm === 'ed25519' || info.algorithm === 'eddsaLegacy') return 'Ed25519'
+    if (curve.startsWith('curve25519') || info.algorithm === 'x25519') return 'Cv25519'
+    if (curve.startsWith('ed448')) return 'Ed448'
+    if (curve.startsWith('curve448') || info.algorithm === 'x448') return 'X448'
+    if (curve.startsWith('nistp') || curve.startsWith('p')) return `NIST P-${curve.replace(/\D/g, '')}`
+    if (curve.startsWith('secp')) return curve
+    if (curve.startsWith('brainpool')) return curve
+    if (info.algorithm.startsWith('rsa')) return info.bits ? `RSA ${info.bits}` : 'RSA'
+    if (info.algorithm.startsWith('dsa')) return info.bits ? `DSA ${info.bits}` : 'DSA'
+    if (info.algorithm.startsWith('elgamal')) return info.bits ? `ElGamal ${info.bits}` : 'ElGamal'
+    return info.curve || info.algorithm
+  } catch {
+    return String(keyOrSubkey.keyPacket?.algorithm ?? 'unknown')
+  }
+}
+
 export async function parsePgpKey(armoredKey: string): Promise<PGPKeyInfo | null> {
   try {
     const { readKey } = await import('openpgp')
     const key = await readKey({ armoredKey })
     const fingerprint = key.getFingerprint().toUpperCase()
-    const algorithm = String(key.keyPacket.algorithm)
+    const algorithm = algorithmName(key)
     const created = key.keyPacket.created?.toISOString() ?? null
     const expiration = await key.getExpirationTime()
     const expires =
@@ -68,7 +89,7 @@ export async function parsePgpKey(armoredKey: string): Promise<PGPKeyInfo | null
     }
 
     const subkeys = key.subkeys.map((sk: any) => ({
-      algorithm: String(sk.keyPacket.algorithm),
+      algorithm: algorithmName(sk),
       created: sk.keyPacket.created?.toISOString() ?? null,
       fingerprint: sk.getFingerprint().toUpperCase(),
     }))

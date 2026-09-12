@@ -245,9 +245,10 @@ For static sites, Jekyll blogs, WordPress, or any HTML page — use the standalo
 | Attribute | Description |
 |-----------|-------------|
 | `data-thurin-card` | ENS name or ETH address to look up (required) |
-| `data-theme` | `thurin`, `dark`, or `light` (default: `thurin`) |
+| `data-theme` | `thurin`, `dark`, or `light` (default: `thurin`). Change it after render and the card follows, so a page with a theme switch can keep the card in step. |
 | `data-rpc-url` | Optional. Any Ethereum RPC; the card reads the v2 registry with plain calls, so the keyless public default works. |
 | `data-neynar-key` | Optional. A Neynar API key, only to verify Farcaster proofs. Without it, Farcaster shows as unverified. |
+| `data-base-url` | Optional. Where the card's "View on Thurin" link points (default `https://thurin.id`). A page served from ENS can pass its own name so the link stays on ENS. |
 | `data-network` | Optional. `sepolia` or `local` instead of mainnet. |
 | `data-registry-address` | Optional. Override the registry contract address. |
 
