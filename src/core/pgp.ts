@@ -8,8 +8,14 @@ import type { PGPKeyInfo, PGPVerification } from './types'
  * can compute; whether a holder reuses such a key as a wallet is their business.
  * In Node, openpgp.js needs the optional `eckey-utils` package for this curve;
  * the browser build does not.
+ *
+ * The low-level packet/key methods take a *complete* config (they index into
+ * it), so this builds one from the library's defaults rather than passing a
+ * partial object.
  */
-const PGP_CONFIG = { rejectCurves: new Set() as Set<never> }
+function pgpConfig(openpgp: typeof import('openpgp')) {
+  return { ...openpgp.config, rejectCurves: new Set() as Set<never> }
+}
 
 /** Human-readable algorithm for a key or subkey packet: "Ed25519", "Cv25519", "RSA 4096", "NIST P-256", … */
 function algorithmName(keyOrSubkey: any): string {
@@ -34,7 +40,9 @@ function algorithmName(keyOrSubkey: any): string {
 
 export async function parsePgpKey(armoredKey: string): Promise<PGPKeyInfo | null> {
   try {
-    const { readKey } = await import('openpgp')
+    const openpgp = await import('openpgp')
+    const { readKey } = openpgp
+    const config = pgpConfig(openpgp)
     const key = await readKey({ armoredKey })
     const fingerprint = key.getFingerprint().toUpperCase()
     const algorithm = algorithmName(key)
@@ -64,8 +72,9 @@ export async function parsePgpKey(armoredKey: string): Promise<PGPKeyInfo | null
             key.keyPacket,
             cert.signatureType,
             { userID: (user as any).userID, key: key.keyPacket },
-            undefined,
-            PGP_CONFIG,
+            undefined,   // date: now
+            undefined,   // detached
+            config,
           )
         } catch {
           continue // signature not made by this key — ignore this certification
@@ -129,7 +138,9 @@ export async function verifyAttestation({
       return { verified: false, reason: 'Missing PGP data' }
     }
 
-    const { readKey, readCleartextMessage, verify } = await import('openpgp')
+    const openpgp = await import('openpgp')
+    const { readKey, readCleartextMessage, LiteralDataPacket } = openpgp
+    const config = pgpConfig(openpgp)
 
     const publicKey = await readKey({ armoredKey: pgpPublicKey })
     const keyFingerprint = publicKey.getFingerprint().toUpperCase()
@@ -138,8 +149,33 @@ export async function verifyAttestation({
     }
 
     const message = await readCleartextMessage({ cleartextMessage: pgpSignature })
-    const { signatures } = await verify({ message, verificationKeys: publicKey, config: PGP_CONFIG })
-    await signatures[0].verified
+
+    // Verify the way gpg does: the key (or subkey) must be valid *now* — bound to
+    // this primary, unrevoked, unexpired — and the signature must be sound. We
+    // deliberately do not ask openpgp.verify(), which also demands the key was
+    // valid at the instant the signature was made. Thurin's update flow tells
+    // people to `export-minimal` after editing notations, which keeps only the
+    // newest self-certification; when that postdates the attest signature
+    // (Ben's own key, 2026-09-14: notations edited 16 minutes after signing),
+    // openpgp.verify() reports "Could not find valid self-signature" for a
+    // signature gpg verifies fine. A key that has since been revoked or expired
+    // still fails here, as it should.
+    // These are internals the .d.ts does not expose (the signature packet list,
+    // the CRLF-normalised text, LiteralDataPacket.setText); they are stable across
+    // openpgp.js 6 and exercised by the real-data tests in attestation.test.ts.
+    const msg = message as any
+    const now = new Date()
+    let signed = false
+    for (const sig of msg.signature.packets) {
+      if (!publicKey.getKeys(sig.issuerKeyID).length) continue
+      const signingKey = await publicKey.getSigningKey(sig.issuerKeyID, now, undefined, config)
+      const literal: any = new LiteralDataPacket()
+      literal.setText(msg.text ?? message.getText().replace(/\r?\n/g, '\r\n'))
+      await sig.verify(signingKey.keyPacket, sig.signatureType, literal, now, true, config)
+      signed = true
+      break
+    }
+    if (!signed) return { verified: false, reason: 'Message is not signed by this key' }
 
     const signedText = message.getText()
     if (!signedText.toLowerCase().includes(ethAddress.toLowerCase())) {

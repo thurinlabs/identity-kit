@@ -16,6 +16,7 @@ function fakeCert(valid: boolean, notations: { name: string; value: string }[]) 
 // self-certification verifies against the primary key and one whose does not.
 // Both carry proof notations.
 vi.mock('openpgp', () => ({
+  config: {}, // pgp.ts builds its config from the library defaults
   readKey: vi.fn(async () => ({
     getFingerprint: () => 'ae3aabc506cbaaa34d744fd2886704ebb2640781',
     keyPacket: { algorithm: 'eddsa', created: new Date(0) },
