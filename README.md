@@ -126,6 +126,16 @@ const { keyInfo, proofs, isLoading } = usePGPProofs(fingerprint, attestation.pgp
 
 `useThurinIdentity` wires this up for you from the current attestation.
 
+## `@thurinlabs/identity-kit/core` — no React
+
+Everything under "Core utilities" below is also published as its own entry point with no React, wagmi, or DOM dependency, for Node and worker consumers (the Thurin CLI and the share-card service use it):
+
+```ts
+import { verifyAttestation, parsePgpKey, getRegistry, chainFor } from '@thurinlabs/identity-kit/core'
+```
+
+Runtime dependencies of this entry: `openpgp` (bundled dependency), `viem` (peer), and in Node `eckey-utils` (dependency) for secp256k1 keys.
+
 ## Core utilities (no React)
 
 The verification and data logic is exported as plain functions — no React, no provider. This is the layer the thurin.id explorer and the hooks both build on; use it directly when you need the validated data behind your own UI.

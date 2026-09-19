@@ -1,6 +1,6 @@
 {
   "name": "@thurinlabs/identity-kit",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "React SDK for embedding Thurin identity data",
   "repository": {
     "type": "git",
@@ -21,7 +21,12 @@
       "require": "./dist/index.cjs"
     },
     "./styles": "./dist/index.css",
-    "./embed": "./dist/embed.global.js"
+    "./embed": "./dist/embed.global.js",
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js",
+      "require": "./dist/core.cjs"
+    }
   },
   "sideEffects": [
     "*.css"

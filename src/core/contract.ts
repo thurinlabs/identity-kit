@@ -1,3 +1,4 @@
+import { mainnet, sepolia, foundry } from 'viem/chains'
 export { REGISTRY_ABI } from './abi'
 
 /**
@@ -61,4 +62,11 @@ export function getRegistry(network: NetworkName = 'mainnet', addressOverride?: 
     return { ...r, address: addressOverride as `0x${string}` }
   }
   return r
+}
+
+/** The viem chain object for a network name. */
+export function chainFor(network: NetworkName = 'mainnet') {
+  if (network === 'sepolia') return sepolia
+  if (network === 'local') return foundry
+  return mainnet
 }

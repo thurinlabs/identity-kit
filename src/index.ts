@@ -48,4 +48,4 @@ export type {
 // Constants
 export { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry, isNetworkName } from './core/contract'
 export type { NetworkName, RegistryDeployment } from './core/contract'
-export { chainFor } from './provider'
+export { chainFor } from './core/contract'

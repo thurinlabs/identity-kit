@@ -16,11 +16,7 @@ const defaultQueryClient = new QueryClient({
   },
 })
 
-export function chainFor(network: NetworkName = 'mainnet') {
-  if (network === 'sepolia') return sepolia
-  if (network === 'local') return foundry
-  return mainnet
-}
+export { chainFor } from './core/contract'
 
 function createDefaultWagmiConfig(rpcUrl: string | undefined, network: NetworkName) {
   const url = rpcUrl || getRegistry(network).defaultRpcUrl
