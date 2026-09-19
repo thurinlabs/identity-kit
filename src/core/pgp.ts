@@ -1,5 +1,16 @@
 import type { PGPKeyInfo, PGPVerification } from './types'
 
+/**
+ * openpgp.js refuses secp256k1 by default because RFC 9580 does not list the
+ * curve — a compatibility choice, not a security one. A secp256k1 PGP key is a
+ * valid key (and, incidentally, doubles as an Ethereum key: the address falls out
+ * of the same public point). Thurin verifies signatures over any curve openpgp.js
+ * can compute; whether a holder reuses such a key as a wallet is their business.
+ * In Node, openpgp.js needs the optional `eckey-utils` package for this curve;
+ * the browser build does not.
+ */
+const PGP_CONFIG = { rejectCurves: new Set() as Set<never> }
+
 /** Human-readable algorithm for a key or subkey packet: "Ed25519", "Cv25519", "RSA 4096", "NIST P-256", … */
 function algorithmName(keyOrSubkey: any): string {
   try {
@@ -53,6 +64,8 @@ export async function parsePgpKey(armoredKey: string): Promise<PGPKeyInfo | null
             key.keyPacket,
             cert.signatureType,
             { userID: (user as any).userID, key: key.keyPacket },
+            undefined,
+            PGP_CONFIG,
           )
         } catch {
           continue // signature not made by this key — ignore this certification
@@ -125,7 +138,7 @@ export async function verifyAttestation({
     }
 
     const message = await readCleartextMessage({ cleartextMessage: pgpSignature })
-    const { signatures } = await verify({ message, verificationKeys: publicKey })
+    const { signatures } = await verify({ message, verificationKeys: publicKey, config: PGP_CONFIG })
     await signatures[0].verified
 
     const signedText = message.getText()

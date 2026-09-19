@@ -1,6 +1,6 @@
 {
   "name": "@thurinlabs/identity-kit",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "React SDK for embedding Thurin identity data",
   "repository": {
     "type": "git",
@@ -42,6 +42,7 @@
     "wagmi": ">=2"
   },
   "dependencies": {
+    "eckey-utils": "^0.7.14",
     "openpgp": "^6.3.0"
   },
   "devDependencies": {
