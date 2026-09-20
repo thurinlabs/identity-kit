@@ -28,14 +28,14 @@ export const NETWORKS: Record<NetworkName, RegistryDeployment> = {
     address: REGISTRY_ADDRESS,
     deployBlock: 25962908n, // 2026-09-12, tx 0xda4c3a19cae4e71ffb02559a048403f664d5a7967c19d42158c39600ec63bad8
     explorerUrl: 'https://etherscan.io',
-    defaultRpcUrl: 'https://ethereum-rpc.publicnode.com',
+    defaultRpcUrl: 'https://ethereum.publicnode.com',   // same service as ethereum-rpc.publicnode.com; this hostname resolves on more networks
   },
   sepolia: {
     chainId: 11155111,
     address: REGISTRY_ADDRESS,
     deployBlock: 11683667n, // 2026-09-11, tx 0x3e40e8f5b9fbf82a4b8943561bcc9b964b2987de10640ac8ff3a1b4ef0725322
     explorerUrl: 'https://sepolia.etherscan.io',
-    defaultRpcUrl: 'https://ethereum-sepolia-rpc.publicnode.com',
+    defaultRpcUrl: 'https://ethereum-sepolia.publicnode.com',
   },
   /** A local anvil instance (`anvil`, chain id 31337). Deploy with pgp-registry's Deploy script. */
   local: {

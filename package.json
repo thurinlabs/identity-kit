@@ -1,6 +1,6 @@
 {
   "name": "@thurinlabs/identity-kit",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "React SDK for embedding Thurin identity data",
   "repository": {
     "type": "git",
