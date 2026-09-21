@@ -25,4 +25,6 @@ export type {
   ProofResult, EFPGraph, Theme, IdentityKitConfig,
 } from './types'
 export { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry, isNetworkName, chainFor } from './contract'
+export { ENS_HINT_KEY, ENS_TEXT_RESOLVER_ABI, ensHintFor, ensHintValue, ensHintWrite, fetchEnsHint } from './ensHint'
+export type { EnsHint, EnsHintState, EnsTextReader } from './ensHint'
 export type { NetworkName, RegistryDeployment } from './contract'

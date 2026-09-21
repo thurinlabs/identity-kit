@@ -126,6 +126,14 @@ const { keyInfo, proofs, isLoading } = usePGPProofs(fingerprint, attestation.pgp
 
 `useThurinIdentity` wires this up for you from the current attestation.
 
+### useEnsHint
+
+```tsx
+const { state, record, reason, isLoading } = useEnsHint('ben.thurinlabs.eth', identity.currentFingerprint)
+```
+
+The name's `id.thurin` text record against the key the registry verifies for its address. `state` is `match`, `unset`, or `mismatch` (with a `reason`). The record is a discovery hint an ENS profile can show; the trust is in the claim. See [Point your ENS name at your claim](https://docs.thurin.id/#/guides/ens-record).
+
 ## `@thurinlabs/identity-kit/core` — no React
 
 Everything under "Core utilities" below is also published as its own entry point with no React, wagmi, or DOM dependency, for Node and worker consumers (the Thurin CLI and the share-card service use it):
@@ -194,6 +202,18 @@ getRegistry('sepolia') // → { chainId: 11155111, address, deployBlock, explore
 ```
 
 `REGISTRY_ABI` is the complete v2 ABI (reads and writes), so apps that publish claims use the same one. The v2 registry is deployed with CREATE2 and has the same address on every network.
+
+### ENS record (`id.thurin`)
+
+```ts
+import { ensHintFor, ensHintValue, ensHintWrite, fetchEnsHint, ENS_HINT_KEY } from '@thurinlabs/identity-kit/core'
+
+const hint = await fetchEnsHint(publicClient, 'ben.thurinlabs.eth', verifiedFingerprint)   // { state: 'match' | 'unset' | 'mismatch', record, fingerprint, expected, reason? }
+const call = ensHintWrite('ben.thurinlabs.eth', verifiedFingerprint)                        // { abi, functionName: 'setText', args: [namehash, 'id.thurin', 'FPR…'] }
+const resolver = await publicClient.getEnsResolver({ name: call.name })                     // look it up at write time; ENSv2 resolvers are per account
+```
+
+`ensHintFor(record, fingerprint)` is the pure comparison; `ensHintValue` is the bare uppercase form Thurin writes.
 
 ### Fingerprints and key IDs
 

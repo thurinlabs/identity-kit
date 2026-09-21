@@ -11,6 +11,7 @@ export { useThurinIdentity } from './hooks/useThurinIdentity'
 export { useAttestations } from './hooks/useAttestations'
 export { useEFPGraph } from './hooks/useEFPGraph'
 export { usePGPProofs } from './hooks/usePGPProofs'
+export { useEnsHint } from './hooks/useEnsHint'
 
 // Core utilities
 export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref } from './core/proofs'
@@ -47,5 +48,7 @@ export type {
 
 // Constants
 export { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry, isNetworkName } from './core/contract'
+export { ENS_HINT_KEY, ENS_TEXT_RESOLVER_ABI, ensHintFor, ensHintValue, ensHintWrite, fetchEnsHint } from './core/ensHint'
+export type { EnsHint, EnsHintState, EnsTextReader } from './core/ensHint'
 export type { NetworkName, RegistryDeployment } from './core/contract'
 export { chainFor } from './core/contract'
