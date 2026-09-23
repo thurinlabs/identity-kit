@@ -122,6 +122,44 @@ export async function parsePgpKey(armoredKey: string): Promise<PGPKeyInfo | null
   }
 }
 
+/**
+ * Verify a clearsigned message against an armored public key, the way gpg does: the signing
+ * key (or subkey) must be valid *now* — bound to this primary, unrevoked, unexpired — and the
+ * signature must be sound. We deliberately do not ask openpgp.verify(), which also demands
+ * the key was valid at the instant the signature was made. Thurin's update flow tells people
+ * to `export-minimal` after editing notations, which keeps only the newest self-certification;
+ * when that postdates the signature (Ben's own key, 2026-09-14: notations edited 16 minutes
+ * after signing), openpgp.verify() reports "Could not find valid self-signature" for a
+ * signature gpg verifies fine. A key that has since been revoked or expired still fails here.
+ * These are internals the .d.ts does not expose (the signature packet list, the
+ * CRLF-normalised text, LiteralDataPacket.setText); they are stable across openpgp.js 6 and
+ * exercised by the real-data tests in attestation.test.ts.
+ *
+ * Used for attestation statements and for clearsigned records such as `thurin.canary`.
+ */
+export async function verifyClearsigned({ armoredKey, clearsigned }: { armoredKey: string; clearsigned: string }): Promise<{ verified: boolean; reason?: string; text: string }> {
+  try {
+    const openpgp = await import('openpgp')
+    const { readKey, readCleartextMessage, LiteralDataPacket } = openpgp
+    const config = pgpConfig(openpgp)
+    const publicKey = await readKey({ armoredKey })
+    const message = await readCleartextMessage({ cleartextMessage: clearsigned })
+    const msg = message as any
+    const now = new Date()
+    for (const sig of msg.signature.packets) {
+      if (!publicKey.getKeys(sig.issuerKeyID).length) continue
+      const signingKey = await publicKey.getSigningKey(sig.issuerKeyID, now, undefined, config)
+      const literal: any = new LiteralDataPacket()
+      literal.setText(msg.text ?? message.getText().replace(/\r?\n/g, '\r\n'))
+      await sig.verify(signingKey.keyPacket, sig.signatureType, literal, now, true, config)
+      return { verified: true, text: message.getText() }
+    }
+    return { verified: false, reason: 'Message is not signed by this key', text: message.getText() }
+  } catch (err) {
+    return { verified: false, reason: err instanceof Error ? err.message : 'Verification failed', text: '' }
+  }
+}
+
 export async function verifyAttestation({
   pgpPublicKey,
   pgpSignature,
@@ -139,8 +177,7 @@ export async function verifyAttestation({
     }
 
     const openpgp = await import('openpgp')
-    const { readKey, readCleartextMessage, LiteralDataPacket } = openpgp
-    const config = pgpConfig(openpgp)
+    const { readKey } = openpgp
 
     const publicKey = await readKey({ armoredKey: pgpPublicKey })
     const keyFingerprint = publicKey.getFingerprint().toUpperCase()
@@ -148,36 +185,10 @@ export async function verifyAttestation({
       return { verified: false, reason: 'Key fingerprint mismatch' }
     }
 
-    const message = await readCleartextMessage({ cleartextMessage: pgpSignature })
+    const v = await verifyClearsigned({ armoredKey: pgpPublicKey, clearsigned: pgpSignature })
+    if (!v.verified) return { verified: false, reason: v.reason }
 
-    // Verify the way gpg does: the key (or subkey) must be valid *now* — bound to
-    // this primary, unrevoked, unexpired — and the signature must be sound. We
-    // deliberately do not ask openpgp.verify(), which also demands the key was
-    // valid at the instant the signature was made. Thurin's update flow tells
-    // people to `export-minimal` after editing notations, which keeps only the
-    // newest self-certification; when that postdates the attest signature
-    // (Ben's own key, 2026-09-14: notations edited 16 minutes after signing),
-    // openpgp.verify() reports "Could not find valid self-signature" for a
-    // signature gpg verifies fine. A key that has since been revoked or expired
-    // still fails here, as it should.
-    // These are internals the .d.ts does not expose (the signature packet list,
-    // the CRLF-normalised text, LiteralDataPacket.setText); they are stable across
-    // openpgp.js 6 and exercised by the real-data tests in attestation.test.ts.
-    const msg = message as any
-    const now = new Date()
-    let signed = false
-    for (const sig of msg.signature.packets) {
-      if (!publicKey.getKeys(sig.issuerKeyID).length) continue
-      const signingKey = await publicKey.getSigningKey(sig.issuerKeyID, now, undefined, config)
-      const literal: any = new LiteralDataPacket()
-      literal.setText(msg.text ?? message.getText().replace(/\r?\n/g, '\r\n'))
-      await sig.verify(signingKey.keyPacket, sig.signatureType, literal, now, true, config)
-      signed = true
-      break
-    }
-    if (!signed) return { verified: false, reason: 'Message is not signed by this key' }
-
-    const signedText = message.getText()
+    const signedText = v.text
     if (!signedText.toLowerCase().includes(ethAddress.toLowerCase())) {
       return { verified: false, reason: 'Signed message does not contain ETH address' }
     }

@@ -1,4 +1,9 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+const fx = (f: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', f), 'utf8')
 import { kindName, recordKind, encodeRecord, decodeRecord, parseRecord, fetchRecords, addPointer, IDENTITY_KINDS, KNOWN_KINDS } from '../records'
 
 const BEN = '6E0053911942A889426C1866E34D9266098F7FE7'
@@ -91,5 +96,30 @@ describe('pointer (still the CLI release list)', () => {
     for (let i = 0; i < 40; i++) rec = addPointer(rec, { name: `thurin-cli 0.${i}.0`, sha256: 'a'.repeat(64), date: '2026-09-23', url: 'https://github.com/thurinlabs/thurin-cli/releases/tag/v0' }).record
     expect(rec.releases[0].name).toBe('thurin-cli 0.39.0')
     expect(new TextEncoder().encode(JSON.stringify(rec)).length).toBeLessThanOrEqual(1024)
+  })
+})
+
+describe('canary verification against the claim key', () => {
+  it('verifyClearsigned: the signing key verifies, another key does not', async () => {
+    const { verifyClearsigned } = await import('../pgp')
+    const signed = fx('company-attestation.asc')   // a real clearsign by the company key
+    const ok = await verifyClearsigned({ armoredKey: fx('company-key.asc'), clearsigned: signed })
+    expect(ok).toMatchObject({ verified: true })
+    expect(ok.text).toMatch(/I control the Ethereum address/)
+    const wrong = await verifyClearsigned({ armoredKey: fx('ben-key-newer-selfcert.asc'), clearsigned: signed })
+    expect(wrong.verified).toBe(false)
+    expect(wrong.reason).toMatch(/not signed by this key/)
+  })
+  it('parseRecord: a clearsigned canary is checked only when a key is given', async () => {
+    const signed = [
+      '-----BEGIN PGP SIGNED MESSAGE-----', 'Hash: SHA256', '',
+      'All keys under my control as of 2026-09-23.',
+      '-----BEGIN PGP SIGNATURE-----', '', 'abc', '-----END PGP SIGNATURE-----', '',
+    ].join('\n')
+    const unchecked = await parseRecord('thurin.canary', signed)
+    expect(unchecked.data).toMatchObject({ type: 'canary', clearsigned: true, verified: null, date: '2026-09-23' })
+    const checked = await parseRecord('thurin.canary', signed, { armoredKey: fx('company-key.asc') })
+    expect(checked.valid).toBe(true)
+    expect(checked.data).toMatchObject({ type: 'canary', clearsigned: true, verified: false })   // garbage signature, honestly reported
   })
 })

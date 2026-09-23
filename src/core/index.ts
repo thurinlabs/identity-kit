@@ -5,7 +5,7 @@
  * React hooks, provider, and ThurinCard.
  */
 export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref } from './proofs'
-export { parsePgpKey, verifyAttestation, stripEmailUserIDs, hasEmailUserID } from './pgp'
+export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID } from './pgp'
 export type { StrippedKey } from './pgp'
 export { fetchEFPGraph } from './efp'
 export {

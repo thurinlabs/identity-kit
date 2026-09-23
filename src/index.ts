@@ -16,7 +16,7 @@ export { useRecords } from './hooks/useRecords'
 
 // Core utilities
 export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref } from './core/proofs'
-export { parsePgpKey, verifyAttestation, stripEmailUserIDs, hasEmailUserID } from './core/pgp'
+export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID } from './core/pgp'
 export type { StrippedKey } from './core/pgp'
 export { fetchEFPGraph } from './core/efp'
 export {

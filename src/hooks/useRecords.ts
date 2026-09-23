@@ -9,7 +9,7 @@ import { IDENTITY_KINDS, decodeRecord, parseRecord, recordKind, type ParsedRecor
  * The records on one claim, for the kinds given (default: the kinds an identity page shows),
  * read in one multicall and parsed. Kinds with no record are left out.
  */
-export function useRecords(address: string | undefined | null, index: number | undefined | null, kinds: readonly string[] = IDENTITY_KINDS) {
+export function useRecords(address: string | undefined | null, index: number | undefined | null, kinds: readonly string[] = IDENTITY_KINDS, armoredKey?: string | null) {
   const config = useIdentityKitConfig()
   const registry = getRegistry(config.network, config.registryAddress)
   const chain = chainFor(config.network)
@@ -23,10 +23,10 @@ export function useRecords(address: string | undefined | null, index: number | u
 
   const texts = (raw ?? []).map(r => (r.status === 'success' ? decodeRecord(r.result as `0x${string}`) : ''))
   const { data: records, isLoading: parseLoading } = useQuery({
-    queryKey: ['records', config.network, registry.address, address, index, kinds.join(','), texts.join(' ')],
+    queryKey: ['records', config.network, registry.address, address, index, kinds.join(','), texts.join(' '), armoredKey ?? ''],
     queryFn: async (): Promise<ParsedRecord[]> => {
       const out: ParsedRecord[] = []
-      for (let i = 0; i < kinds.length; i++) if (texts[i]) out.push(await parseRecord(kinds[i], texts[i]))
+      for (let i = 0; i < kinds.length; i++) if (texts[i]) out.push(await parseRecord(kinds[i], texts[i], { armoredKey: armoredKey ?? undefined }))
       return out
     },
     enabled: enabled && raw !== undefined,

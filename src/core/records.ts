@@ -1,6 +1,7 @@
 import { hexToString, stringToHex, type Hex } from 'viem'
 import { normalizeFingerprint } from './fingerprint'
 import { recordKind } from './authorization'
+import { verifyClearsigned } from './pgp'
 export { recordKind }
 
 /**
@@ -88,7 +89,7 @@ export type RecordData =
   | { type: 'security'; contact: string; url: string | null }
   | { type: 'successor'; fingerprint: string }
   | { type: 'affiliation'; with: string; role: string | null }
-  | { type: 'canary'; date: string; statement: string; clearsigned: boolean }
+  | { type: 'canary'; date: string; statement: string; clearsigned: boolean; verified: boolean | null; reason?: string }
   | { type: 'encrypted'; recipients: number | null }
   | { type: 'pointer'; releases: PointerEntry[] }
   | { type: 'text' }
@@ -99,9 +100,11 @@ const ISO_DATE = /\b(\d{4}-\d{2}-\d{2})\b/
 
 /**
  * Parse a record of a known kind. Never throws: a value that does not fit its kind comes back
- * with `valid: false` and a reason, so a page can still show what is there.
+ * with `valid: false` and a reason, so a page can still show what is there. Pass the claim's
+ * `armoredKey` to check clearsigned kinds (`thurin.canary`) against it: `verified` is then
+ * true or false, and null when no key was given.
  */
-export async function parseRecord(kind: string, text: string): Promise<ParsedRecord> {
+export async function parseRecord(kind: string, text: string, opts: { armoredKey?: string } = {}): Promise<ParsedRecord> {
   const bytes = new TextEncoder().encode(text).length
   const base = { kind, text, bytes }
   const invalid = (reason: string, data: RecordData = { type: 'text' }): ParsedRecord => ({ ...base, valid: false, reason, data })
@@ -132,8 +135,14 @@ export async function parseRecord(kind: string, text: string): Promise<ParsedRec
       const date = t.match(ISO_DATE)?.[1]
       if (!date) return invalid('No date in the statement')
       const clearsigned = t.startsWith('-----BEGIN PGP SIGNED MESSAGE-----')
-      const statement = clearsigned ? (t.split(/\r?\n\r?\n/)[1] ?? '').split('-----BEGIN PGP SIGNATURE-----')[0].trim() : t
-      return { ...base, valid: true, data: { type: 'canary', date, statement, clearsigned } }
+      let statement = clearsigned ? (t.split(/\r?\n\r?\n/)[1] ?? '').split('-----BEGIN PGP SIGNATURE-----')[0].trim() : t
+      let verified: boolean | null = null, reason: string | undefined
+      if (clearsigned && opts.armoredKey) {
+        const v = await verifyClearsigned({ armoredKey: opts.armoredKey, clearsigned: t })
+        verified = v.verified; reason = v.reason
+        if (v.text) statement = v.text.trim()
+      }
+      return { ...base, valid: true, data: { type: 'canary', date, statement, clearsigned, verified, ...(reason ? { reason } : {}) } }
     }
     case 'thurin.private':
     case 'thurin.disclosure': {
@@ -165,13 +174,13 @@ export interface RecordReader {
  */
 export async function fetchRecords(
   client: RecordReader, registry: `0x${string}`, abi: unknown,
-  owner: `0x${string}`, index: number | bigint, kinds: readonly string[] = IDENTITY_KINDS,
+  owner: `0x${string}`, index: number | bigint, kinds: readonly string[] = IDENTITY_KINDS, opts: { armoredKey?: string } = {},
 ): Promise<ParsedRecord[]> {
   const out: ParsedRecord[] = []
   for (const kind of kinds) {
     const hex = await client.readContract({ address: registry, abi, functionName: 'record', args: [owner, BigInt(index), recordKind(kind)] }) as Hex
     const text = decodeRecord(hex)
-    if (text) out.push(await parseRecord(kind, text))
+    if (text) out.push(await parseRecord(kind, text, opts))
   }
   return out
 }
