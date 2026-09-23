@@ -134,6 +134,15 @@ const { state, record, reason, isLoading } = useEnsHint('ben.thurinlabs.eth', id
 
 The name's `id.thurin` text record against the key the registry verifies for its address. `state` is `match`, `unset`, or `mismatch` (with a `reason`). The record is a discovery hint an ENS profile can show; the trust is in the claim. See [Point your ENS name at your claim](https://docs.thurin.id/#/guides/ens-record).
 
+### useRecords
+
+```tsx
+const { records, isLoading } = useRecords(identity.address, claimIndex)
+// records: [{ kind: 'thurin.railgun', text, valid, data: { type: 'railgun', address } }, ...]
+```
+
+The records on one claim for the kinds an identity page shows (`IDENTITY_KINDS`), read in one multicall and parsed. Kinds with no record are left out. See the [records reference](https://docs.thurin.id/#/records).
+
 ## `@thurinlabs/identity-kit/core` — no React
 
 Everything under "Core utilities" below is also published as its own entry point with no React, wagmi, or DOM dependency, for Node and worker consumers (the Thurin CLI and the share-card service use it):
@@ -202,6 +211,17 @@ getRegistry('sepolia') // → { chainId: 11155111, address, deployBlock, explore
 ```
 
 `REGISTRY_ABI` is the complete v2 ABI (reads and writes), so apps that publish claims use the same one. The v2 registry is deployed with CREATE2 and has the same address on every network.
+
+### Records
+
+```ts
+import { fetchRecords, parseRecord, encodeRecord, kindName, IDENTITY_KINDS, KNOWN_KINDS } from '@thurinlabs/identity-kit/core'
+
+const records = await fetchRecords(publicClient, REGISTRY_ADDRESS, REGISTRY_ABI, owner, claimIndex)   // ParsedRecord[] for IDENTITY_KINDS
+const one = await parseRecord('thurin.canary', text)   // { valid, reason?, data: { type: 'canary', date, statement, clearsigned } }
+```
+
+A record is one value per claim per kind, up to 1 KB, set only by the owner. `parseRecord` never throws: a value that does not fit its kind comes back with `valid: false` and a reason. Kinds Thurin defines: `thurin.railgun`, `thurin.security`, `thurin.successor`, `thurin.affiliation`, `thurin.canary`, `thurin.private`, `thurin.disclosure` (shown on identity pages) and `thurin.pointer` (the Thurin Labs release list). Anyone can use reverse-dot names of their own.
 
 ### ENS record (`id.thurin`)
 

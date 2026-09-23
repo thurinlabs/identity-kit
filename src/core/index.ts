@@ -25,6 +25,11 @@ export type {
   ProofResult, EFPGraph, Theme, IdentityKitConfig,
 } from './types'
 export { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry, isNetworkName, chainFor } from './contract'
+export {
+  MAX_RECORD_BYTES, KNOWN_KINDS, IDENTITY_KINDS, kindName, encodeRecord, decodeRecord,
+  parsePointer, addPointer, renderPointer, parseRecord, fetchRecords,
+} from './records'
+export type { KnownKind, ParsedRecord, RecordData, PointerEntry, PointerRecord, RecordReader } from './records'
 export { ENS_HINT_KEY, ENS_TEXT_RESOLVER_ABI, ensHintFor, ensHintValue, ensHintWrite, fetchEnsHint } from './ensHint'
 export type { EnsHint, EnsHintState, EnsTextReader } from './ensHint'
 export type { NetworkName, RegistryDeployment } from './contract'

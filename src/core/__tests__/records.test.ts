@@ -1,0 +1,95 @@
+import { describe, it, expect } from 'vitest'
+import { kindName, recordKind, encodeRecord, decodeRecord, parseRecord, fetchRecords, addPointer, IDENTITY_KINDS, KNOWN_KINDS } from '../records'
+
+const BEN = '6E0053911942A889426C1866E34D9266098F7FE7'
+const ZK = '0zk1' + 'qyqxpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn5'   // bech32 charset, real ones are 127 chars
+
+describe('record kinds and encoding', () => {
+  it('namespaces bare names and leaves dotted ones alone', () => {
+    expect(kindName('canary')).toBe('thurin.canary')
+    expect(kindName('thurin.canary')).toBe('thurin.canary')
+    expect(kindName('com.example.thing')).toBe('com.example.thing')
+    expect(recordKind('thurin.canary')).toMatch(/^0x[0-9a-f]{64}$/)
+  })
+  it('round-trips text and enforces the 1 KB slot', () => {
+    expect(decodeRecord(encodeRecord('hello'))).toBe('hello')
+    expect(decodeRecord('0x')).toBe('')
+    expect(() => encodeRecord('x'.repeat(1025))).toThrow(/1024/)
+  })
+  it('keeps pointer out of the identity page but in the known list', () => {
+    expect(IDENTITY_KINDS).not.toContain('thurin.pointer')
+    expect(KNOWN_KINDS).toContain('thurin.pointer')
+  })
+})
+
+describe('parseRecord', () => {
+  it('railgun: a 0zk address, or not', async () => {
+    const ok = await parseRecord('thurin.railgun', ZK)
+    expect(ok.valid).toBe(true)
+    expect(ok.data).toMatchObject({ type: 'railgun', address: ZK })
+    const bad = await parseRecord('thurin.railgun', '0x539C7e1E454296Dc150B95a0acCC05bCa3b33538')
+    expect(bad.valid).toBe(false)
+    expect(bad.reason).toMatch(/0zk/)
+  })
+  it('security: a contact line, url detected', async () => {
+    const u = await parseRecord('thurin.security', 'https://thurinlabs.id/security')
+    expect(u.data).toMatchObject({ type: 'security', url: 'https://thurinlabs.id/security' })
+    const t = await parseRecord('thurin.security', 'encrypt to this key, hello@thurin.id')
+    expect(t.valid).toBe(true)
+    expect(t.data).toMatchObject({ type: 'security', url: null })
+  })
+  it('successor: a fingerprint, normalized', async () => {
+    const s = await parseRecord('thurin.successor', '6e00 5391 1942 a889 426c 1866 e34d 9266 098f 7fe7')
+    expect(s.data).toMatchObject({ type: 'successor', fingerprint: BEN.toLowerCase() })
+    expect((await parseRecord('thurin.successor', 'nope')).valid).toBe(false)
+  })
+  it('affiliation: v1 json with `with`', async () => {
+    const a = await parseRecord('thurin.affiliation', '{"v":1,"with":"thurinlabs.eth","role":"founder"}')
+    expect(a.data).toMatchObject({ type: 'affiliation', with: 'thurinlabs.eth', role: 'founder' })
+    expect((await parseRecord('thurin.affiliation', '{"v":1}')).valid).toBe(false)
+    expect((await parseRecord('thurin.affiliation', 'not json')).reason).toBe('Not JSON')
+  })
+  it('canary: needs a date; reads a clearsigned statement', async () => {
+    const plain = await parseRecord('thurin.canary', 'All keys under my control as of 2026-09-23.')
+    expect(plain.data).toMatchObject({ type: 'canary', date: '2026-09-23', clearsigned: false })
+    const signed = [
+      '-----BEGIN PGP SIGNED MESSAGE-----', 'Hash: SHA256', '',
+      'Nothing compromised as of 2026-09-01.',
+      '-----BEGIN PGP SIGNATURE-----', '', 'abc', '-----END PGP SIGNATURE-----', '',
+    ].join('\n')
+    const c = await parseRecord('thurin.canary', signed)
+    expect(c.data).toMatchObject({ type: 'canary', date: '2026-09-01', clearsigned: true, statement: 'Nothing compromised as of 2026-09-01.' })
+    expect((await parseRecord('thurin.canary', 'all good')).valid).toBe(false)
+  })
+  it('private / disclosure: must be a PGP message', async () => {
+    const bad = await parseRecord('thurin.private', 'hello')
+    expect(bad.valid).toBe(false)
+    expect(bad.reason).toMatch(/PGP message/)
+    const garbage = await parseRecord('thurin.disclosure', ['-----BEGIN PGP MESSAGE-----', '', 'notbase64!!', '-----END PGP MESSAGE-----'].join('\n'))
+    expect(garbage.valid).toBe(false)
+  })
+  it('unknown kinds are shown as text', async () => {
+    const x = await parseRecord('com.example.thing', 'anything')
+    expect(x.valid).toBe(true)
+    expect(x.data).toEqual({ type: 'text' })
+  })
+})
+
+describe('fetchRecords', () => {
+  it('reads each kind and skips empty ones', async () => {
+    const seen: string[] = []
+    const client = { readContract: async ({ args }: any) => { seen.push(args[2]); return args[2] === recordKind('thurin.canary') ? encodeRecord('ok as of 2026-09-23') : '0x' } }
+    const out = await fetchRecords(client as any, '0x9302E02e2869e129aC8516fE5eFFd51EA3082c09', [], '0x539C7e1E454296Dc150B95a0acCC05bCa3b33538', 0)
+    expect(seen.length).toBe(IDENTITY_KINDS.length)
+    expect(out.map(r => r.kind)).toEqual(['thurin.canary'])
+  })
+})
+
+describe('pointer (still the CLI release list)', () => {
+  it('adds newest first and drops the oldest when full', () => {
+    let rec = null as any
+    for (let i = 0; i < 40; i++) rec = addPointer(rec, { name: `thurin-cli 0.${i}.0`, sha256: 'a'.repeat(64), date: '2026-09-23', url: 'https://github.com/thurinlabs/thurin-cli/releases/tag/v0' }).record
+    expect(rec.releases[0].name).toBe('thurin-cli 0.39.0')
+    expect(new TextEncoder().encode(JSON.stringify(rec)).length).toBeLessThanOrEqual(1024)
+  })
+})
