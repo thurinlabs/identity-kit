@@ -182,7 +182,7 @@ await hasEmailUserID(armoredKey) // → true if any user ID contains an @
 
 **Published identity.** An attestation stores the armored key on-chain, permanently and publicly. Since 0.9.0 the intended shape is a key whose only user ID is a non-email one (any name — `thurin` is the suggestion), carrying the `proof@thurin.id` notations. `stripEmailUserIDs` produces that from a normal export; the stripped key still verifies (`verifyAttestation` needs at least one self-certified user ID, so a key with none is rejected) and keeps the notations on the user ID it retains. Proofs are then read from the on-chain key, never from a keyserver.
 
-`fetchKeyByFingerprint` / `fetchKeyByKeyId` (keys.openpgp.org) remain exported for key-ID → fingerprint resolution, but note that keyserver serves unverified-email keys as bare packets and drops non-email user IDs, so it cannot supply a published identity.
+Nothing in the kit talks to a keyserver: keys come from the registry, and `thurin keyserver` / keys.thurin.id serve them over HKP for gpg.
 
 ### EFP & claims
 

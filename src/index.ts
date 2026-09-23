@@ -15,7 +15,7 @@ export { useEnsHint } from './hooks/useEnsHint'
 
 // Core utilities
 export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref } from './core/proofs'
-export { parsePgpKey, verifyAttestation, stripEmailUserIDs, hasEmailUserID, fetchKeyByFingerprint, fetchKeyByKeyId } from './core/pgp'
+export { parsePgpKey, verifyAttestation, stripEmailUserIDs, hasEmailUserID } from './core/pgp'
 export type { StrippedKey } from './core/pgp'
 export { fetchEFPGraph } from './core/efp'
 export {

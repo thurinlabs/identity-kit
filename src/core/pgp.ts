@@ -238,25 +238,3 @@ export async function hasEmailUserID(armoredKey: string): Promise<boolean> {
     return false
   }
 }
-
-const KEYSERVER_BASE = 'https://keys.openpgp.org/vks/v1'
-
-export async function fetchKeyByFingerprint(fingerprint: string): Promise<string | null> {
-  try {
-    const resp = await fetch(`${KEYSERVER_BASE}/by-fingerprint/${fingerprint}`)
-    if (!resp.ok) return null
-    return await resp.text()
-  } catch {
-    return null
-  }
-}
-
-export async function fetchKeyByKeyId(keyId: string): Promise<string | null> {
-  try {
-    const resp = await fetch(`${KEYSERVER_BASE}/by-keyid/${keyId}`)
-    if (!resp.ok) return null
-    return await resp.text()
-  } catch {
-    return null
-  }
-}
