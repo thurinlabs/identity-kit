@@ -43,6 +43,29 @@ export function ThurinCard({ ens, address, theme = 'thurin' }: ThurinCardProps) 
 
   const displayAddress = identity.address || null
 
+  // A failed lookup says so, instead of rendering zeros that read as facts.
+  if (identity.errorKind) {
+    return (
+      <div className="thurin-card" data-thurin-theme={theme}>
+        <div className="thurin-card-header">
+          <ThurinLogo />
+          <div>
+            <div className="thurin-card-name">{identity.ensName || ens || address}</div>
+          </div>
+        </div>
+        <div className="thurin-card-error" role="status">
+          {identity.error?.message}
+          {identity.errorKind !== 'not-found' && (
+            <button type="button" className="thurin-card-retry" onClick={identity.retry}>Try again</button>
+          )}
+        </div>
+        {profileUrl && identity.errorKind !== 'not-found' && (
+          <a className="thurin-card-link" href={profileUrl} target="_blank" rel="noopener noreferrer">View on Thurin</a>
+        )}
+      </div>
+    )
+  }
+
   const verifiedProofs = identity.proofs.filter((p) => p.status === 'verified').length
   const hasVerifiedPgp = identity.claims.some((c) => c.verification?.verified && !c.revoked)
 
@@ -79,7 +102,8 @@ export function ThurinCard({ ens, address, theme = 'thurin' }: ThurinCardProps) 
         </div>
         <div className="thurin-card-stat">
           <span className="thurin-card-stat-value">
-            {identity.efp?.followers ?? 0}
+            {/* EFP answers separately; a null graph means it didn't, so don't claim zero. */}
+            {identity.efp ? identity.efp.followers : '–'}
           </span>
           <span className="thurin-card-stat-label">Followers</span>
         </div>

@@ -20,6 +20,8 @@ export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref }
 export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID } from './core/pgp'
 export type { StrippedKey } from './core/pgp'
 export { fetchEFPGraph } from './core/efp'
+export { identityErrorKind, needsRpcProbe, IDENTITY_ERROR_TEXT } from './core/identityError'
+export type { IdentityErrorKind, IdentityLookupState } from './core/identityError'
 export { avatarUrl, parseNftAvatar, nftAvatarImage, NFT_AVATAR_ABI, IPFS_GATEWAY, ARWEAVE_GATEWAY } from './core/avatar'
 export type { NftAvatar } from './core/avatar'
 export {

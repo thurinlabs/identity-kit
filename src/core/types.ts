@@ -85,7 +85,12 @@ export interface ThurinIdentity {
   proofs: ProofResult[]
   efp: EFPGraph | null
   isLoading: boolean
+  /** Set when the identity couldn't be shown; the message is plain and safe to display. */
   error: Error | null
+  /** Why: the RPC didn't answer, the ENS name has no address, or a registry read failed. */
+  errorKind: 'rpc' | 'not-found' | 'read' | null
+  /** Re-run the lookups (for a "Try again" button). */
+  retry: () => void
 }
 
 export type Theme = 'thurin' | 'dark' | 'light'

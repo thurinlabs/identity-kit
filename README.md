@@ -96,6 +96,8 @@ const identity = useThurinIdentity('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
 
 Returns: `ThurinIdentity` with `address`, `ensName`, `ensAvatar`, `claims`, `totalClaims`, `activeClaims`, `currentFingerprint`, `pgpKeyInfo`, `proofs`, `efp`, `isLoading`, `error`.
 
+When the identity can't be shown, `error` is a plain `Error` safe to display and `errorKind` says why: `'rpc'` (the RPC didn't answer, so nothing is known), `'not-found'` (the ENS name has no address), or `'read'` (the RPC answers but a registry read failed); `retry()` re-runs the lookups. `ThurinCard` shows these instead of zeros, and a follower count EFP didn't answer for shows `–` (1.3.4).
+
 `ensAvatar` is set only when loading it can't reveal the viewer to the name's owner: IPFS, Arweave, inline data, a content-addressed NFT, or `euc.li` (the ENS app's upload host). A plain `https://` avatar on the owner's own server is left out, since loading it would hand that server every viewer's IP (1.3.3; earlier versions loaded any avatar). The rule is `avatarUrl()` in the core; `useSafeAvatar(name, chainId)` is the hook.
 
 ### useAttestations

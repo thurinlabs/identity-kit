@@ -1,4 +1,6 @@
-import { useEnsAddress, useEnsName } from 'wagmi'
+import { useEnsAddress, useEnsName, usePublicClient } from 'wagmi'
+import { useQuery } from '@tanstack/react-query'
+import { identityErrorKind, needsRpcProbe, IDENTITY_ERROR_TEXT } from '../core/identityError'
 import { useIdentityKitConfig } from '../context'
 import { chainFor } from '../provider'
 import { normalize } from 'viem/ens'
@@ -26,7 +28,7 @@ export function useThurinIdentity(ensOrAddress: string | undefined | null): Thur
   const ensInput = ensOrAddress && !isAddr ? safeNormalize(ensOrAddress) : undefined
 
   // Resolve ENS → address
-  const { data: resolvedAddress } = useEnsAddress({
+  const { data: resolvedAddress, error: ensError, isFetched: ensFetched, refetch: refetchEns } = useEnsAddress({
     name: ensInput,
     chainId: chain.id,
     query: { enabled: !!ensInput },
@@ -52,6 +54,8 @@ export function useThurinIdentity(ensOrAddress: string | undefined | null): Thur
     activeClaims,
     currentFingerprint,
     isLoading: claimsLoading,
+    error: claimsError,
+    refetch: refetchClaims,
   } = useAttestations(address)
 
   // PGP proofs come from the key stored in the current attestation — the
@@ -69,6 +73,27 @@ export function useThurinIdentity(ensOrAddress: string | undefined | null): Thur
   // EFP social graph
   const { efp, isLoading: efpLoading } = useEFPGraph(address)
 
+  // An empty ENS result or a failed read might just be a dead RPC; ask it for the block
+  // number before saying anything about the identity (core/identityError.ts).
+  const lookup = { ensEmpty: !!ensInput && ensFetched && !resolvedAddress, ensFailed: !!ensError, claimsFailed: !!claimsError }
+  const probeNeeded = needsRpcProbe(lookup)
+  const client = usePublicClient({ chainId: chain.id })
+  const probe = useQuery({
+    queryKey: ['thurin-rpc-probe', chain.id, ensOrAddress],
+    queryFn: () => client!.getBlockNumber(),
+    enabled: probeNeeded && !!client,
+    retry: 0,
+    staleTime: 0,
+  })
+  const rpcAnswered = !probeNeeded || probe.isFetching ? undefined : probe.isSuccess ? true : probe.isError ? false : undefined
+  const errorKind = identityErrorKind({ ...lookup, rpcAnswered })
+  const probing = probeNeeded && rpcAnswered === undefined
+  const retry = () => {
+    if (ensInput) refetchEns()
+    refetchClaims()
+    if (probeNeeded) probe.refetch()
+  }
+
   return {
     address,
     ensName: displayName,
@@ -80,7 +105,11 @@ export function useThurinIdentity(ensOrAddress: string | undefined | null): Thur
     pgpKeyInfo,
     proofs,
     efp,
-    isLoading: claimsLoading || proofsLoading || efpLoading,
-    error: null,
+    // "Not finished" counts as loading, including queries paused in a background tab: the card
+    // must not render defaults (zeros) for an identity it hasn't looked up yet.
+    isLoading: (!!ensInput && !ensFetched) || claimsLoading || proofsLoading || efpLoading || probing,
+    error: errorKind ? new Error(IDENTITY_ERROR_TEXT[errorKind]) : null,
+    errorKind,
+    retry,
   }
 }

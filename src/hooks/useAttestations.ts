@@ -19,7 +19,7 @@ export function useAttestations(address: string | undefined | null) {
   const chain = chainFor(config.network)
   const owner = address as `0x${string}` | undefined
 
-  const { data: rows, isLoading: rowsLoading } = useReadContract({
+  const { data: rows, isLoading: rowsLoading, isFetched: rowsFetched, error: rowsError, refetch: refetchRows } = useReadContract({
     address: registry.address,
     abi: REGISTRY_ABI,
     functionName: 'attestationsOf',
@@ -40,7 +40,7 @@ export function useAttestations(address: string | undefined | null) {
       }))
     : []
 
-  const { data: payloads, isLoading: payloadsLoading } = useReadContracts({
+  const { data: payloads, isLoading: payloadsLoading, error: payloadsError, refetch: refetchPayloads } = useReadContracts({
     contracts,
     query: { enabled: contracts.length > 0 },
   })
@@ -88,7 +88,8 @@ export function useAttestations(address: string | undefined | null) {
     staleTime: 300_000,
   })
 
-  const isLoading = rowsLoading || payloadsLoading || verifyLoading || (!!owner && rows !== undefined && !payloadsReady)
+  // Not fetched yet counts as loading (a paused query in a background tab is not "no claims").
+  const isLoading = rowsLoading || (!!owner && !rowsFetched) || payloadsLoading || verifyLoading || (!!owner && rows !== undefined && !payloadsReady)
 
   const activeClaims = (claims || []).filter((c) => !c.revoked)
   // The current identity is the latest claim that is both active and has a
@@ -105,5 +106,8 @@ export function useAttestations(address: string | undefined | null) {
     activeClaims: activeClaims.length,
     currentFingerprint,
     isLoading,
+    /** A registry read failed (the RPC may be down; useThurinIdentity finds out which). */
+    error: (rowsError ?? payloadsError ?? null) as Error | null,
+    refetch: () => { if (owner) { refetchRows(); if (contracts.length > 0) refetchPayloads() } },
   }
 }

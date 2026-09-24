@@ -134,3 +134,23 @@
   color: var(--thurin-text-muted);
   font-size: 14px;
 }
+
+.thurin-card-error {
+  margin: 12px 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--thurin-text-muted);
+}
+
+.thurin-card-retry {
+  display: inline;
+  margin-left: 8px;
+  padding: 0;
+  background: none;
+  border: none;
+  font: inherit;
+  color: var(--thurin-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
