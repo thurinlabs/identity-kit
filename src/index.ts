@@ -16,7 +16,8 @@ export { useRecords } from './hooks/useRecords'
 export { useSafeAvatar } from './hooks/useSafeAvatar'
 
 // Core utilities
-export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref } from './core/proofs'
+export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref, FARCASTER_HUB } from './core/proofs'
+export type { ProofOptions } from './core/proofs'
 export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID } from './core/pgp'
 export type { StrippedKey } from './core/pgp'
 export { fetchEFPGraph } from './core/efp'

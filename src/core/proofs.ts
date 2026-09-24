@@ -175,40 +175,47 @@ async function verifyDNS(proof: Proof, fingerprint: string): Promise<PGPVerifica
   }
 }
 
+/**
+ * Farcaster proofs are read from a Farcaster node's HTTP API (`/v1/userNameProofByName`,
+ * `/v1/castsByFid`). The default is Quilibrium's public Hypersnap node, which needs no key and
+ * allows browser requests; it sees the visitor's IP and which account was checked. Point
+ * `farcasterHub` at your own node to avoid that, or pass a Neynar key to use Neynar's hub.
+ */
+export const FARCASTER_HUB = 'https://haatz.quilibrium.com'
 const NEYNAR_HUB = 'https://hub-api.neynar.com'
 
-async function resolveFid(
-  username: string,
-  apiKey: string,
-): Promise<number | null> {
-  const resp = await fetch(
-    `${NEYNAR_HUB}/v1/userNameProofByName?name=${encodeURIComponent(username)}`,
-    { headers: { 'x-api-key': apiKey } },
-  )
-  if (!resp.ok) return null
-  const data = await resp.json()
-  return data.fid ?? null
+export interface ProofOptions {
+  /** A Farcaster node's HTTP API base URL. Default: FARCASTER_HUB (keyless). */
+  farcasterHub?: string
+  /** Optional: read Farcaster through Neynar's hub with this key instead. */
+  neynarApiKey?: string
+}
+
+function farcasterSource(opts: ProofOptions): { base: string; headers: Record<string, string> } {
+  if (opts.farcasterHub) return { base: opts.farcasterHub.replace(/\/+$/, ''), headers: {} }
+  if (opts.neynarApiKey) return { base: NEYNAR_HUB, headers: { 'x-api-key': opts.neynarApiKey } }
+  return { base: FARCASTER_HUB, headers: {} }
 }
 
 async function verifyFarcaster(
   proof: Proof,
   fingerprint: string,
-  neynarApiKey?: string,
+  opts: ProofOptions = {},
 ): Promise<PGPVerification> {
-  if (!neynarApiKey) {
-    return { verified: false, reason: 'Farcaster verification requires a Neynar API key' }
-  }
-
+  const { base, headers } = farcasterSource(opts)
+  const host = base.replace(/^https?:\/\//, '')
   try {
-    const fid = await resolveFid(proof.user!, neynarApiKey)
+    const nameResp = await fetch(`${base}/v1/userNameProofByName?name=${encodeURIComponent(proof.user!)}`, { headers })
+    if (nameResp.status === 404) return { verified: false, reason: `Could not resolve Farcaster user "${proof.user}"` }
+    if (!nameResp.ok) return { verified: false, reason: `Couldn't check: the Farcaster node (${host}) returned ${nameResp.status}` }
+    const fid = (await nameResp.json()).fid
     if (!fid) return { verified: false, reason: `Could not resolve Farcaster user "${proof.user}"` }
 
-    const headers = { 'x-api-key': neynarApiKey }
     let pageToken = ''
     for (let page = 0; page < 5; page++) {
-      const url = `${NEYNAR_HUB}/v1/castsByFid?fid=${fid}&pageSize=100&reverse=true${pageToken ? `&pageToken=${pageToken}` : ''}`
+      const url = `${base}/v1/castsByFid?fid=${fid}&pageSize=100&reverse=true${pageToken ? `&pageToken=${pageToken}` : ''}`
       const resp = await fetch(url, { headers })
-      if (!resp.ok) return { verified: false, reason: `Farcaster Hub returned ${resp.status}` }
+      if (!resp.ok) return { verified: false, reason: `Couldn't check: the Farcaster node (${host}) returned ${resp.status}` }
       const data = await resp.json()
 
       for (const msg of data.messages || []) {
@@ -228,7 +235,7 @@ async function verifyFarcaster(
 
     return { verified: false, reason: 'Cast not found' }
   } catch (err: any) {
-    return { verified: false, reason: `Farcaster fetch failed: ${err.message}` }
+    return { verified: false, reason: `Couldn't check: the Farcaster node (${host}) didn't answer (${err.message})` }
   }
 }
 
@@ -287,7 +294,7 @@ async function verifyMastodon(proof: Proof, fingerprint: string): Promise<PGPVer
   }
 }
 
-type Verifier = (proof: Proof, fingerprint: string, neynarApiKey?: string) => Promise<PGPVerification>
+type Verifier = (proof: Proof, fingerprint: string, opts?: ProofOptions) => Promise<PGPVerification>
 
 const verifiers: Record<string, Verifier> = {
   github: verifyGitHub,
@@ -297,12 +304,16 @@ const verifiers: Record<string, Verifier> = {
   mastodon: verifyMastodon,
 }
 
+/**
+ * Check one proof. The third argument is options; a plain string is still accepted as a
+ * Neynar API key (the pre-1.3.7 signature).
+ */
 export async function verifyProof(
   proof: Proof,
   fingerprint: string,
-  neynarApiKey?: string,
+  opts?: ProofOptions | string,
 ): Promise<PGPVerification> {
   const fn = verifiers[proof.provider]
   if (!fn) return { verified: false, reason: 'Unknown provider' }
-  return fn(proof, fingerprint, neynarApiKey)
+  return fn(proof, fingerprint, typeof opts === 'string' ? { neynarApiKey: opts } : (opts ?? {}))
 }

@@ -28,11 +28,13 @@ function renderCards() {
     // Optional config via data attributes — everything stays client-side.
     // data-rpc-url: any Ethereum RPC (the v2 registry needs only eth_call, so the
     //   keyless public default works).
-    // data-neynar-key: optional, only to verify Farcaster proofs.
+    // data-farcaster-hub: optional Farcaster node for Farcaster proofs (default: a public keyless node).
+    // data-neynar-key: optional, read Farcaster through Neynar instead (not needed since 1.3.7).
     // data-base-url: where "View on Thurin" points (default https://thurin.id);
     //   a page served from ENS sets its own name here so the link stays on ENS.
     const rpcUrl = el.dataset.rpcUrl
     const neynarApiKey = el.dataset.neynarKey
+    const farcasterHub = el.dataset.farcasterHub
     const baseUrl = el.dataset.baseUrl
     // data-network: 'mainnet' (default), 'sepolia', or 'local' (anvil).
     // data-registry-address: optional override of the registry contract address.
@@ -55,7 +57,7 @@ function renderCards() {
     const root = createRoot(container)
     const render = (t: Theme) =>
       root.render(
-        <IdentityKitProvider rpcUrl={rpcUrl} neynarApiKey={neynarApiKey} network={network} registryAddress={registryAddress} baseUrl={baseUrl}>
+        <IdentityKitProvider rpcUrl={rpcUrl} neynarApiKey={neynarApiKey} farcasterHub={farcasterHub} network={network} registryAddress={registryAddress} baseUrl={baseUrl}>
           <ThurinCard {...props} theme={t} />
         </IdentityKitProvider>,
       )

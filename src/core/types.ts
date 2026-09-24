@@ -97,7 +97,10 @@ export type Theme = 'thurin' | 'dark' | 'light'
 
 export interface IdentityKitConfig {
   rpcUrl?: string
+  /** Optional: read Farcaster proofs through Neynar's hub with this key. Not needed since 1.3.7. */
   neynarApiKey?: string
+  /** A Farcaster node's HTTP API for Farcaster proofs. Default: Quilibrium's public Hypersnap node (keyless). */
+  farcasterHub?: string
   baseUrl?: string
   /** Which PGPRegistry deployment to read: 'mainnet' (default) or 'sepolia'. */
   network?: 'mainnet' | 'sepolia' | 'local'

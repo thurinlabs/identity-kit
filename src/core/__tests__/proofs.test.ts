@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { identifyProof, displayUrl, proofHref, proofSecondaryHref, verifyProof } from '../proofs'
+import { identifyProof, displayUrl, proofHref, proofSecondaryHref, verifyProof, FARCASTER_HUB } from '../proofs'
 
 describe('identifyProof', () => {
   it('returns null for non-proof notations', () => {
@@ -160,11 +160,43 @@ describe('verifyProof', () => {
     vi.restoreAllMocks()
   })
 
-  it('returns skipped for Farcaster without API key', async () => {
+  describe('Farcaster node', () => {
+    const fpr = '03E53D807CE38C130ED42ECECD3D0D7F0C9E5FB8'
     const proof = { provider: 'farcaster', label: 'Farcaster', url: '', user: 'alice', castHash: '0xabc' }
-    const result = await verifyProof(proof, 'ABCD1234')
-    expect(result.verified).toBe(false)
-    expect(result.reason).toContain('Neynar API key')
+    const hub = () => vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ fid: 7 }) } as Response)
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ messages: [{ hash: '0xabc1', data: { castAddBody: { text: `openpgp4fpr:${fpr}` } } }] }) } as Response)
+    const call = (spy: any, i: number) => ({ url: String(spy.mock.calls[i][0]), headers: (spy.mock.calls[i][1]?.headers ?? {}) as Record<string, string> })
+
+    it('reads the public Hypersnap node by default, with no key', async () => {
+      const spy = hub()
+      expect((await verifyProof(proof, fpr)).verified).toBe(true)
+      expect(call(spy, 0).url.startsWith(`${FARCASTER_HUB}/v1/userNameProofByName`)).toBe(true)
+      expect(call(spy, 1).url.startsWith(`${FARCASTER_HUB}/v1/castsByFid?fid=7`)).toBe(true)
+      expect(call(spy, 0).headers['x-api-key']).toBeUndefined()
+    })
+    it('still treats a string as a Neynar key (the old signature)', async () => {
+      const spy = hub()
+      expect((await verifyProof(proof, fpr, 'k')).verified).toBe(true)
+      expect(call(spy, 0).url.startsWith('https://hub-api.neynar.com/')).toBe(true)
+      expect(call(spy, 0).headers['x-api-key']).toBe('k')
+    })
+    it('uses farcasterHub when given, over a Neynar key', async () => {
+      const spy = hub()
+      expect((await verifyProof(proof, fpr, { farcasterHub: 'https://my-node.example/', neynarApiKey: 'k' })).verified).toBe(true)
+      expect(call(spy, 0).url.startsWith('https://my-node.example/v1/')).toBe(true)
+      expect(call(spy, 0).headers['x-api-key']).toBeUndefined()
+    })
+    it("says it couldn't check when the node is down, not that the proof failed", async () => {
+      vi.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      const r = await verifyProof(proof, fpr)
+      expect(r.verified).toBe(false)
+      expect(r.reason).toMatch(/^Couldn't check: the Farcaster node \(haatz\.quilibrium\.com\)/)
+    })
+    it('reports an unknown username as unresolved', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({ ok: false, status: 404, json: async () => ({}) } as Response)
+      expect((await verifyProof(proof, fpr)).reason).toBe('Could not resolve Farcaster user "alice"')
+    })
   })
 
   it('returns unverified for unknown provider', async () => {

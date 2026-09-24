@@ -59,13 +59,14 @@ export function IdentityKitProvider({
   children,
   rpcUrl,
   neynarApiKey,
+  farcasterHub,
   baseUrl = 'https://thurin.id',
   network = 'mainnet',
   registryAddress,
 }: IdentityKitProviderProps) {
   const config = useMemo(
-    () => ({ rpcUrl, neynarApiKey, baseUrl, network, registryAddress }),
-    [rpcUrl, neynarApiKey, baseUrl, network, registryAddress],
+    () => ({ rpcUrl, neynarApiKey, farcasterHub, baseUrl, network, registryAddress }),
+    [rpcUrl, neynarApiKey, farcasterHub, baseUrl, network, registryAddress],
   )
 
   return (

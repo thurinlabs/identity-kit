@@ -4,7 +4,8 @@
  * Node or worker consumer import. The root entry re-exports all of this plus the
  * React hooks, provider, and ThurinCard.
  */
-export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref } from './proofs'
+export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref, FARCASTER_HUB } from './proofs'
+export type { ProofOptions } from './proofs'
 export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID } from './pgp'
 export type { StrippedKey } from './pgp'
 export { fetchEFPGraph } from './efp'

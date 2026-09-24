@@ -36,7 +36,7 @@ export function usePGPProofs(fingerprint: string | undefined | null, armoredKey:
       // Verify all proofs in parallel
       const proofs: ProofResult[] = await Promise.all(
         identified.map(async (proof) => {
-          const result = await verifyProof(proof, fingerprint, config.neynarApiKey)
+          const result = await verifyProof(proof, fingerprint, { neynarApiKey: config.neynarApiKey, farcasterHub: config.farcasterHub })
           return {
             provider: proof.provider,
             label: proof.label,
