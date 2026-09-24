@@ -96,6 +96,8 @@ const identity = useThurinIdentity('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
 
 Returns: `ThurinIdentity` with `address`, `ensName`, `ensAvatar`, `claims`, `totalClaims`, `activeClaims`, `currentFingerprint`, `pgpKeyInfo`, `proofs`, `efp`, `isLoading`, `error`.
 
+`ensAvatar` is set only when loading it can't reveal the viewer to the name's owner: IPFS, Arweave, inline data, a content-addressed NFT, or `euc.li` (the ENS app's upload host). A plain `https://` avatar on the owner's own server is left out, since loading it would hand that server every viewer's IP (1.3.3; earlier versions loaded any avatar). The rule is `avatarUrl()` in the core; `useSafeAvatar(name, chainId)` is the hook.
+
 ### useAttestations
 
 On-chain attestation data from the PGPRegistry v2 contract — the owner's history plus the stored signature and key for each claim, read with plain contract calls (no event logs), each verified off-chain.
@@ -234,6 +236,16 @@ const resolver = await publicClient.getEnsResolver({ name: call.name })         
 ```
 
 `ensHintFor(record, fingerprint)` is the pure comparison; `ensHintValue` is the bare uppercase form Thurin writes.
+
+### Avatars
+
+```ts
+import { avatarUrl, parseNftAvatar, nftAvatarImage } from '@thurinlabs/identity-kit/core'
+
+avatarUrl('ipfs://Qm…')                     // 'https://ipfs.io/ipfs/Qm…'
+avatarUrl('https://euc.li/vitalik.eth')     // allowed: ENS Labs' host, not the owner's
+avatarUrl('https://example.com/me.png')     // null: the owner's server would see every viewer
+```
 
 ### Fingerprints and key IDs
 

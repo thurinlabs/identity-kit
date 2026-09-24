@@ -1,10 +1,11 @@
-import { useEnsAddress, useEnsName, useEnsAvatar } from 'wagmi'
+import { useEnsAddress, useEnsName } from 'wagmi'
 import { useIdentityKitConfig } from '../context'
 import { chainFor } from '../provider'
 import { normalize } from 'viem/ens'
 import { useAttestations } from './useAttestations'
 import { useEFPGraph } from './useEFPGraph'
 import { usePGPProofs } from './usePGPProofs'
+import { useSafeAvatar } from './useSafeAvatar'
 import type { ThurinIdentity } from '../core/types'
 
 function isAddress(value: string): boolean {
@@ -42,11 +43,7 @@ export function useThurinIdentity(ensOrAddress: string | undefined | null): Thur
 
   const displayName = ensInput || ensName || null
 
-  const { data: ensAvatar } = useEnsAvatar({
-    name: displayName ? safeNormalize(displayName) : undefined,
-    chainId: chain.id,
-    query: { enabled: !!displayName },
-  })
+  const ensAvatar = useSafeAvatar(displayName ? safeNormalize(displayName) : undefined, chain.id)
 
   // On-chain attestations
   const {
@@ -75,7 +72,7 @@ export function useThurinIdentity(ensOrAddress: string | undefined | null): Thur
   return {
     address,
     ensName: displayName,
-    ensAvatar: ensAvatar ?? null,
+    ensAvatar,
     claims,
     totalClaims,
     activeClaims,

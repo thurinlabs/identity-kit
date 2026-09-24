@@ -13,12 +13,15 @@ export { useEFPGraph } from './hooks/useEFPGraph'
 export { usePGPProofs } from './hooks/usePGPProofs'
 export { useEnsHint } from './hooks/useEnsHint'
 export { useRecords } from './hooks/useRecords'
+export { useSafeAvatar } from './hooks/useSafeAvatar'
 
 // Core utilities
 export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref } from './core/proofs'
 export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID } from './core/pgp'
 export type { StrippedKey } from './core/pgp'
 export { fetchEFPGraph } from './core/efp'
+export { avatarUrl, parseNftAvatar, nftAvatarImage, NFT_AVATAR_ABI, IPFS_GATEWAY, ARWEAVE_GATEWAY } from './core/avatar'
+export type { NftAvatar } from './core/avatar'
 export {
   normalizeFingerprint, fingerprintToBytes, bytesToFingerprint, fingerprintHash, keyIdOf, keyIdToBytes,
 } from './core/fingerprint'
