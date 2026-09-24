@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { useThurinIdentity } from '../../hooks/useThurinIdentity'
+import { avatarFallbacks } from '../../core/avatar'
 import { useIdentityKitConfig } from '../../context'
 import type { Theme } from '../../core/types'
 import '../../themes/index.css'
@@ -14,6 +16,14 @@ function ThurinLogo() {
       <path d="M50 65 L50 53" fill="none" stroke="#c9a227" strokeWidth="4" strokeLinecap="round"/>
     </svg>
   )
+}
+
+// The avatar, retried through the other IPFS gateways if one fails, then the logo.
+function Avatar({ src, alt }: { src: string | null; alt: string }) {
+  const [tries, setTries] = useState<string[]>([])
+  useEffect(() => { setTries(src ? [src, ...avatarFallbacks(src)] : []) }, [src])
+  if (!tries.length) return <ThurinLogo />
+  return <img className="thurin-card-avatar" src={tries[0]} alt={alt} onError={() => setTries((t) => t.slice(1))} />
 }
 
 export interface ThurinCardProps {
@@ -72,15 +82,7 @@ export function ThurinCard({ ens, address, theme = 'thurin' }: ThurinCardProps) 
   return (
     <div className="thurin-card" data-thurin-theme={theme}>
       <a className="thurin-card-header" href={profileUrl || undefined} target="_blank" rel="noopener noreferrer">
-        {identity.ensAvatar ? (
-          <img
-            className="thurin-card-avatar"
-            src={identity.ensAvatar}
-            alt={identity.ensName || ''}
-          />
-        ) : (
-          <ThurinLogo />
-        )}
+        <Avatar src={identity.ensAvatar} alt={identity.ensName || ''} />
         <div>
           {identity.ensName && (
             <div className="thurin-card-name">{identity.ensName}</div>

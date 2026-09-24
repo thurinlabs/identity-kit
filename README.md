@@ -98,7 +98,7 @@ Returns: `ThurinIdentity` with `address`, `ensName`, `ensAvatar`, `claims`, `tot
 
 When the identity can't be shown, `error` is a plain `Error` safe to display and `errorKind` says why: `'rpc'` (the RPC didn't answer, so nothing is known), `'not-found'` (the ENS name has no address), or `'read'` (the RPC answers but a registry read failed); `retry()` re-runs the lookups. `ThurinCard` shows these instead of zeros, and a follower count EFP didn't answer for shows `–` (1.3.4).
 
-`ensAvatar` is set only when loading it can't reveal the viewer to the name's owner: IPFS, Arweave, inline data, a content-addressed NFT, or `euc.li` (the ENS app's upload host). A plain `https://` avatar on the owner's own server is left out, since loading it would hand that server every viewer's IP (1.3.3; earlier versions loaded any avatar). The rule is `avatarUrl()` in the core; `useSafeAvatar(name, chainId)` is the hook.
+`ensAvatar` is set only when loading it can't reveal the viewer to the name's owner: IPFS, Arweave, inline data, a content-addressed NFT, or `euc.li` (the ENS app's upload host). IPFS images load through `ipfs.filebase.io`, falling back to Pinata's public gateway if that fails (`IPFS_GATEWAYS`, `avatarFallbacks()`; 1.3.6). A plain `https://` avatar on the owner's own server is left out, since loading it would hand that server every viewer's IP (1.3.3; earlier versions loaded any avatar). The rule is `avatarUrl()` in the core; `useSafeAvatar(name, chainId)` is the hook.
 
 ### useAttestations
 
@@ -244,7 +244,7 @@ const resolver = await publicClient.getEnsResolver({ name: call.name })         
 ```ts
 import { avatarUrl, parseNftAvatar, nftAvatarImage } from '@thurinlabs/identity-kit/core'
 
-avatarUrl('ipfs://Qm…')                     // 'https://ipfs.io/ipfs/Qm…'
+avatarUrl('ipfs://Qm…')                     // 'https://ipfs.filebase.io/ipfs/Qm…' (avatarFallbacks() → Pinata)
 avatarUrl('https://euc.li/vitalik.eth')     // allowed: ENS Labs' host, not the owner's
 avatarUrl('https://example.com/me.png')     // null: the owner's server would see every viewer
 ```

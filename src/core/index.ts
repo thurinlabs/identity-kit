@@ -32,7 +32,7 @@ export {
 export type { KnownKind, ParsedRecord, RecordData, PointerEntry, PointerRecord, RecordReader } from './records'
 export { identityErrorKind, needsRpcProbe, IDENTITY_ERROR_TEXT } from './identityError'
 export type { IdentityErrorKind, IdentityLookupState } from './identityError'
-export { avatarUrl, parseNftAvatar, nftAvatarImage, NFT_AVATAR_ABI, IPFS_GATEWAY, ARWEAVE_GATEWAY } from './avatar'
+export { avatarUrl, avatarFallbacks, parseNftAvatar, nftAvatarImage, NFT_AVATAR_ABI, IPFS_GATEWAY, IPFS_GATEWAYS, ARWEAVE_GATEWAY } from './avatar'
 export type { NftAvatar } from './avatar'
 export { ENS_HINT_KEY, ENS_TEXT_RESOLVER_ABI, ensHintFor, ensHintValue, ensHintWrite, fetchEnsHint } from './ensHint'
 export type { EnsHint, EnsHintState, EnsTextReader } from './ensHint'

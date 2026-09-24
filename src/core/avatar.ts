@@ -3,11 +3,18 @@
  * chooses; loading an ordinary https:// link would tell that owner's server the IP and time of
  * everyone who views the card. So only images the owner can't watch load: content-addressed
  * ones (IPFS, Arweave, inline data, or an NFT whose metadata and image are content-addressed)
- * through one public gateway, and euc.li, ENS Labs' host behind the ENS app's avatar upload
+ * through public gateways, and euc.li, ENS Labs' host behind the ENS app's avatar upload
  * (most avatars; ENS Labs sees the view, the name's owner doesn't). Anything else: no avatar.
  */
 
-export const IPFS_GATEWAY = 'https://ipfs.io/ipfs/'
+/**
+ * Public IPFS gateways, tried in order: when an image fails to load, the next one is used.
+ * Any single public gateway can stop serving (ipfs.io and dweb.link went "service worker only"
+ * in 2026), so there is always a fallback. The gateway sees the viewer's IP and the avatar.
+ */
+export const IPFS_GATEWAYS = ['https://ipfs.filebase.io/ipfs/', 'https://gateway.pinata.cloud/ipfs/'] as const
+/** The first gateway in IPFS_GATEWAYS (kept for code that imported it before 1.3.6). */
+export const IPFS_GATEWAY: string = IPFS_GATEWAYS[0]
 export const ARWEAVE_GATEWAY = 'https://arweave.net/'
 
 /** An image URL safe to load for `uri`, or null if loading it would reach a host the owner picked. */
@@ -26,12 +33,19 @@ export function avatarUrl(uri: unknown): string | null {
   return null
 }
 
+/** The same content through the other IPFS gateways, for retrying a failed load. [] for non-IPFS URLs. */
+export function avatarFallbacks(url: string | null | undefined): string[] {
+  if (!url || !url.startsWith(IPFS_GATEWAYS[0])) return []
+  const path = url.slice(IPFS_GATEWAYS[0].length)
+  return IPFS_GATEWAYS.slice(1).map((g) => g + path)
+}
+
 export interface NftAvatar { chainId: number; standard: 'erc721' | 'erc1155'; contract: `0x${string}`; tokenId: bigint }
 
-/** `eip155:1/erc721:0x…/123` (or erc1155) → its parts; null for anything else. */
+/** `eip155:1/erc721:0x…/123` (or erc1155; any case, as records in the wild vary) → its parts; null otherwise. */
 export function parseNftAvatar(raw: unknown): NftAvatar | null {
-  const m = typeof raw === 'string' && raw.trim().match(/^eip155:(\d+)\/(erc721|erc1155):(0x[0-9a-fA-F]{40})\/(\d+)$/)
-  return m ? { chainId: Number(m[1]), standard: m[2] as NftAvatar['standard'], contract: m[3] as `0x${string}`, tokenId: BigInt(m[4]) } : null
+  const m = typeof raw === 'string' && raw.trim().match(/^eip155:(\d+)\/(erc721|erc1155):(0x[0-9a-fA-F]{40})\/(\d+)$/i)
+  return m ? { chainId: Number(m[1]), standard: m[2].toLowerCase() as NftAvatar['standard'], contract: m[3] as `0x${string}`, tokenId: BigInt(m[4]) } : null
 }
 
 export const NFT_AVATAR_ABI = [
@@ -52,9 +66,13 @@ export async function nftAvatarImage(tokenUri: string, tokenId: bigint, fetchFn:
   else {
     const url = uri.startsWith('data:') ? null : avatarUrl(uri)
     if (!url) return null
-    const res = await fetchFn(url)
-    if (!res.ok) return null
-    meta = await res.json()
+    for (const candidate of [url, ...avatarFallbacks(url)]) {
+      try {
+        const res = await fetchFn(candidate)
+        if (res.ok) { meta = await res.json(); break }
+      } catch { /* try the next gateway */ }
+    }
+    if (!meta) return null
   }
   return avatarUrl(meta?.image ?? meta?.image_url)
 }
