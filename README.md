@@ -64,7 +64,7 @@ Wrap your app (or just the part using identity-kit) in `IdentityKitProvider`. If
 
 // With options
 <IdentityKitProvider
-  rpcUrl="https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY"
+  rpcUrl="https://your-node.example"
   neynarApiKey="YOUR_NEYNAR_KEY"
   baseUrl="https://thurin.id"
 >
@@ -300,7 +300,7 @@ For static sites, Jekyll blogs, WordPress, or any HTML page — use the standalo
 <div
   data-thurin-card="bendoubleu.eth"
   data-theme="thurin"
-  data-rpc-url="https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY"
+  data-rpc-url="https://your-node.example"
 ></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@thurinlabs/identity-kit@0/dist/embed.global.js"></script>
