@@ -1,5 +1,4 @@
-import { useEnsAddress, useEnsName, usePublicClient } from 'wagmi'
-import { useQuery } from '@tanstack/react-query'
+import { useBlockNumber, useEnsAddress, useEnsName } from 'wagmi'
 import { identityErrorKind, needsRpcProbe, IDENTITY_ERROR_TEXT } from '../core/identityError'
 import { useIdentityKitConfig } from '../context'
 import { chainFor } from '../provider'
@@ -77,13 +76,13 @@ export function useThurinIdentity(ensOrAddress: string | undefined | null): Thur
   // number before saying anything about the identity (core/identityError.ts).
   const lookup = { ensEmpty: !!ensInput && ensFetched && !resolvedAddress, ensFailed: !!ensError, claimsFailed: !!claimsError }
   const probeNeeded = needsRpcProbe(lookup)
-  const client = usePublicClient({ chainId: chain.id })
-  const probe = useQuery({
-    queryKey: ['thurin-rpc-probe', chain.id, ensOrAddress],
-    queryFn: () => client!.getBlockNumber(),
-    enabled: probeNeeded && !!client,
-    retry: 0,
-    staleTime: 0,
+  // useBlockNumber, not usePublicClient: the latter attaches every public action to the client,
+  // which put ~360 KB more into the standalone embed (1.3.4). Own scope per identity and no
+  // caching, so an earlier answer can't make a dead RPC look alive.
+  const probe = useBlockNumber({
+    chainId: chain.id,
+    scopeKey: `thurin-rpc-probe:${ensOrAddress ?? ''}`,
+    query: { enabled: probeNeeded, retry: 0, staleTime: 0, gcTime: 0 },
   })
   const rpcAnswered = !probeNeeded || probe.isFetching ? undefined : probe.isSuccess ? true : probe.isError ? false : undefined
   const errorKind = identityErrorKind({ ...lookup, rpcAnswered })
