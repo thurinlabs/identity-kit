@@ -14,7 +14,10 @@ import type { PGPKeyInfo, PGPVerification } from './types'
  * partial object.
  */
 function pgpConfig(openpgp: typeof import('openpgp')) {
-  return { ...openpgp.config, rejectCurves: new Set() as Set<never> }
+  // Accept secp256k1 only. Clearing the set would also accept anything openpgp.js adds to it
+  // later for security reasons (terricola, 2026-09-23); removing one entry keeps that policy.
+  const rejectCurves = new Set([...(openpgp.config.rejectCurves ?? [])].filter(c => c !== 'secp256k1'))
+  return { ...openpgp.config, rejectCurves: rejectCurves as Set<never> }
 }
 
 /** Human-readable algorithm for a key or subkey packet: "Ed25519", "Cv25519", "RSA 4096", "NIST P-256", … */

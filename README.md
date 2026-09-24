@@ -320,7 +320,7 @@ The card talks directly to Ethereum and each proof platform — no intermediary,
 
 ## Key algorithms
 
-Any curve openpgp.js can compute is accepted: Ed25519, Cv25519, NIST P-256/384/521, brainpool, RSA, and **secp256k1**. openpgp.js rejects secp256k1 by default because RFC 9580 does not list it; identity-kit turns that rejection off, since it is a compatibility rule, not a security one. A secp256k1 PGP key doubles as an Ethereum key (the address is derived from the same public point), so anything that can sign with the PGP key can sign Ethereum transactions: hold such a key if you like, but do not fund its derived address. In Node, openpgp.js needs the `eckey-utils` package for this curve; identity-kit depends on it, so `npm install` brings it in. The browser build needs nothing extra.
+Any curve openpgp.js can compute is accepted: Ed25519, Cv25519, NIST P-256/384/521, brainpool, RSA, and **secp256k1**. openpgp.js rejects secp256k1 by default because RFC 9580 does not list it; identity-kit removes secp256k1 from `rejectCurves` and leaves the rest of the list alone, since that one entry is a compatibility rule, not a security one (1.3.2; earlier versions cleared the whole set). A secp256k1 PGP key doubles as an Ethereum key (the address is derived from the same public point), so anything that can sign with the PGP key can sign Ethereum transactions: hold such a key if you like, but do not fund its derived address. In Node, openpgp.js needs the `eckey-utils` package for this curve; identity-kit depends on it, so `npm install` brings it in. The browser build needs nothing extra.
 
 ## Migrating from 0.9.x
 
