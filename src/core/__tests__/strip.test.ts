@@ -66,7 +66,7 @@ describe('stripEmailUserIDs (real keys)', () => {
   it('the stripped key still verifies the attestation signature', async () => {
     const r = await stripEmailUserIDs(MIXED)
     const v = await verifyAttestation({ pgpPublicKey: r!.armored, pgpSignature: SIG, fingerprint: FPR, ethAddress: ADDR })
-    expect(v).toEqual({ verified: true })
+    expect(v).toMatchObject({ verified: true, kind: 'verified' })
   })
 
   it('the stripped key keeps the proof notations on the published user ID', async () => {

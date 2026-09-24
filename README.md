@@ -185,7 +185,9 @@ const keyInfo = await parsePgpKey(armoredKey)
 // → { fingerprint, userIDs, algorithm, created, expires, notations, subkeys } | null
 
 const verification = await verifyAttestation({ pgpPublicKey, pgpSignature, fingerprint, ethAddress })
-// → { verified: boolean, reason?: string }
+// → { verified, kind, at?, revocationReason?, signingKey?, expiresAt?, algorithm?, reason? }
+//   kind: 'verified' | 'expired' | 'signing-key-expired' | 'revoked' | 'compromised'
+//       | 'signing-key-revoked' | 'unsupported' | 'bad-signature'   (1.4.0)
 
 // Prepare a key for publishing: drop every user ID that contains an email address.
 const stripped = await stripEmailUserIDs(armoredKey)
@@ -194,7 +196,30 @@ const stripped = await stripEmailUserIDs(armoredKey)
 await hasEmailUserID(armoredKey) // → true if any user ID contains an @
 ```
 
-**Published identity.** An attestation stores the armored key on-chain, permanently and publicly. Since 0.9.0 the intended shape is a key whose only user ID is a non-email one (any name — `thurin` is the suggestion), carrying the `proof@thurin.id` notations. `stripEmailUserIDs` produces that from a normal export; the stripped key still verifies (`verifyAttestation` needs at least one self-certified user ID, so a key with none is rejected) and keeps the notations on the user ID it retains. Proofs are then read from the on-chain key, never from a keyserver.
+**Published identity.** An attestation stores the armored key on-chain, permanently and publicly. Since 0.9.0 the intended shape is a key whose only user ID is a non-email one (usually the name already on the key, without the email), carrying the `proof@thurin.id` notations. `stripEmailUserIDs` produces that from a normal export; the stripped key still verifies (`verifyAttestation` needs at least one self-certified user ID, so a key with none is rejected) and keeps the notations on the user ID it retains. Proofs are then read from the on-chain key, never from a keyserver.
+
+### Why a claim does or doesn't count (1.4.0)
+
+`verifyAttestation` returns a `kind` along with `verified`, so a page can say why in plain words instead of showing a library error. Checked in this order: the key revoked (`compromised` when the owner's reason was compromise), the key expired, the signing subkey revoked, the signing subkey expired; then an algorithm openpgp.js refuses (`unsupported`, e.g. DSA); anything else is `bad-signature`. `at` is the date that goes with it. A verified result carries `expiresAt`: the earlier of the key's and the signing subkey's expiry.
+
+```ts
+import { claimCheckText, expiresSoon, expiresSoonText, claimFates, claimFateText, CLAIM_CHECK_LABEL } from '@thurinlabs/identity-kit'
+
+claimCheckText(verification)
+// → { kind: 'expired', label: 'key expired',
+//     sentence: 'The key on this claim expired on Mar 5, 2029, so the claim no longer counts.',
+//     fix: 'Extend the key, then Update key. No new signature needed.' }   // `fix` is for the owner
+
+const soon = expiresSoon(verification)           // within 30 days → { days, at } | null
+if (soon) expiresSoonText(soon)                  // 'Key expires in 12 days (Mar 6, 2027).'
+
+// Revoked or replaced: reattest revokes and attests in one transaction, so a claim revoked the
+// same second a newer one was created was replaced by it.
+const fates = claimFates(attestations)           // Map<index, { state: 'active' | 'revoked' | 'replaced', at?, by? }>
+claimFateText(fates.get(1)!)                     // 'Replaced by claim #2 on Oct 3, 2026.'
+```
+
+Dates are formatted in UTC ("Mar 5, 2029") so every viewer sees the same day; pass your own formatter as the second argument.
 
 Nothing in the kit talks to a keyserver: keys come from the registry, and `thurin keyserver` / keys.thurin.id serve them over HKP for gpg.
 
@@ -336,7 +361,7 @@ The card talks directly to Ethereum and each proof platform — no intermediary,
 
 ## Key algorithms
 
-Any curve openpgp.js can compute is accepted: Ed25519, Cv25519, NIST P-256/384/521, brainpool, RSA, and **secp256k1**. openpgp.js rejects secp256k1 by default because RFC 9580 does not list it; identity-kit removes secp256k1 from `rejectCurves` and leaves the rest of the list alone, since that one entry is a compatibility rule, not a security one (1.3.2; earlier versions cleared the whole set). A secp256k1 PGP key doubles as an Ethereum key (the address is derived from the same public point), so anything that can sign with the PGP key can sign Ethereum transactions: hold such a key if you like, but do not fund its derived address. In Node, openpgp.js needs the `eckey-utils` package for this curve; identity-kit depends on it, so `npm install` brings it in. The browser build needs nothing extra.
+Any curve openpgp.js can compute is accepted: Ed25519, Cv25519, NIST P-256/384/521, brainpool, RSA (2048 bits and up), and **secp256k1**. DSA and short RSA keys are refused by openpgp.js as too weak; since 1.4.0 such a claim reports `kind: 'unsupported'`. openpgp.js rejects secp256k1 by default because RFC 9580 does not list it; identity-kit removes secp256k1 from `rejectCurves` and leaves the rest of the list alone, since that one entry is a compatibility rule, not a security one (1.3.2; earlier versions cleared the whole set). A secp256k1 PGP key doubles as an Ethereum key (the address is derived from the same public point), so anything that can sign with the PGP key can sign Ethereum transactions: hold such a key if you like, but do not fund its derived address. In Node, openpgp.js needs the `eckey-utils` package for this curve; identity-kit depends on it, so `npm install` brings it in. The browser build needs nothing extra.
 
 ## Migrating from 0.9.x
 

@@ -22,7 +22,7 @@ export type {
   RevokeAuthorization, SetRecordAuthorization,
 } from './authorization'
 export type {
-  ThurinIdentity, Attestation, PGPVerification, PGPKeyInfo, SubkeyInfo, Notation, Proof,
+  ThurinIdentity, Attestation, PGPVerification, ClaimCheckKind, PGPKeyInfo, SubkeyInfo, Notation, Proof,
   ProofResult, EFPGraph, Theme, IdentityKitConfig,
 } from './types'
 export { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry, isNetworkName, chainFor } from './contract'
@@ -32,6 +32,8 @@ export {
 } from './records'
 export type { KnownKind, ParsedRecord, RecordData, PointerEntry, PointerRecord, RecordReader } from './records'
 export { identityErrorKind, needsRpcProbe, IDENTITY_ERROR_TEXT } from './identityError'
+export { CLAIM_CHECK_LABEL, claimCheckText, formatClaimDate, expiresSoon, expiresSoonText, claimFates, claimFateText } from './claimStatus'
+export type { ClaimCheckText, ClaimFate } from './claimStatus'
 export type { IdentityErrorKind, IdentityLookupState } from './identityError'
 export { avatarUrl, avatarFallbacks, parseNftAvatar, nftAvatarImage, NFT_AVATAR_ABI, IPFS_GATEWAY, IPFS_GATEWAYS, ARWEAVE_GATEWAY } from './avatar'
 export type { NftAvatar } from './avatar'

@@ -20,7 +20,7 @@ describe('verifyAttestation against real on-chain data', () => {
       fingerprint: '03E53D807CE38C130ED42ECECD3D0D7F0C9E5FB8',
       ethAddress: '0xD730182053Bb2365d15B2b1bE68542c760cb7f10',
     })
-    expect(result).toEqual({ verified: true })
+    expect(result).toMatchObject({ verified: true, kind: 'verified' })
   })
 
   it('verifies a statement signed by a signing SUBKEY of a certify-only primary', async () => {
@@ -31,7 +31,7 @@ describe('verifyAttestation against real on-chain data', () => {
       fingerprint: '08B9374FDFBEC67EFFA24E669D3D86E35361EF7B',
       ethAddress: '0x539c7e1e454296dc150b95a0accc05bca3b33538',
     })
-    expect(result).toEqual({ verified: true })
+    expect(result).toMatchObject({ verified: true, kind: 'verified' })
   })
 
   it('rejects a statement whose text was altered after signing', async () => {
@@ -62,6 +62,6 @@ describe('verifyAttestation against real on-chain data', () => {
       fingerprint: '03E53D807CE38C130ED42ECECD3D0D7F0C9E5FB8',
       ethAddress: '0x539c7e1e454296dc150b95a0accc05bca3b33538',
     })
-    expect(result).toEqual({ verified: false, reason: 'Signed message does not contain ETH address' })
+    expect(result).toMatchObject({ verified: false, reason: 'Signed message does not contain ETH address', kind: 'bad-signature' })
   })
 })

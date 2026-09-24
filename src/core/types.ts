@@ -17,9 +17,33 @@ export interface Attestation {
   verification: PGPVerification | null
 }
 
+/** Why a claim does or doesn't count, in a form a UI can word (see CLAIM_CHECK_LABEL). Since 1.4.0. */
+export type ClaimCheckKind =
+  | 'verified'
+  | 'expired'              // the key's expiry has passed
+  | 'signing-key-expired'  // the subkey that signed the claim has expired
+  | 'revoked'              // the owner revoked the PGP key
+  | 'compromised'          // …revoked as compromised
+  | 'signing-key-revoked'  // the subkey that signed the claim was revoked
+  | 'unsupported'          // an algorithm Thurin doesn't check (e.g. DSA)
+  | 'bad-signature'        // the stored signature, fingerprint, or address doesn't match
+
 export interface PGPVerification {
   verified: boolean
+  /** The underlying library message, for logs; show `kind` to people instead. */
   reason?: string
+  /** Since 1.4.0. */
+  kind?: ClaimCheckKind
+  /** ISO date that goes with `kind`: when the key or subkey expired or was revoked. */
+  at?: string | null
+  /** The owner's revocation reason (their words, or the reason code's name). */
+  revocationReason?: string | null
+  /** Fingerprint of the key or subkey that made the claim's signature. */
+  signingKey?: string | null
+  /** When verified: the earlier expiry of the key and the signing subkey (ISO), or null if neither expires. */
+  expiresAt?: string | null
+  /** For `unsupported`: the algorithm, e.g. "DSA 2048". */
+  algorithm?: string | null
 }
 
 export interface PGPKeyInfo {

@@ -25,7 +25,7 @@ describe('secp256k1 keys', () => {
 
   it('verifies a hardware-signed attestation over the curve', async () => {
     const result = await verifyAttestation({ pgpPublicKey: key, pgpSignature: attestation, fingerprint: FPR, ethAddress: ADDR })
-    expect(result).toEqual({ verified: true })
+    expect(result).toMatchObject({ verified: true, kind: 'verified' })
   })
 
   it('still rejects the attestation for a different address', async () => {

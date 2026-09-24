@@ -163,6 +163,60 @@ export async function verifyClearsigned({ armoredKey, clearsigned }: { armoredKe
   }
 }
 
+const REVOCATION_REASON: Record<number, string> = { // 0 = "no reason specified", gpg's default: say nothing rather than "(reason: no reason given)"
+  1: 'replaced by a newer key', 2: 'compromised', 3: 'no longer used', 32: 'a user ID is no longer valid' }
+
+const iso = (d: Date | number | null | undefined) =>
+  d instanceof Date ? d.toISOString() : typeof d === 'number' && Number.isFinite(d) ? new Date(d).toISOString() : null
+
+/** The newest revocation packet's date and reason (the one that makes isRevoked true). */
+function revocationOf(sigs: any[]): { at: string | null; compromised: boolean; revocationReason: string | null } {
+  const sig = [...(sigs ?? [])].sort((a, b) => (b.created?.getTime?.() ?? 0) - (a.created?.getTime?.() ?? 0))[0]
+  const flag = sig?.reasonForRevocationFlag ?? null
+  return {
+    at: iso(sig?.created),
+    compromised: flag === 2,
+    revocationReason: sig?.reasonForRevocationString || (flag !== null ? REVOCATION_REASON[flag] ?? null : null),
+  }
+}
+
+/**
+ * The life of the key behind a claim, judged now: revoked? expired? and the same for the subkey
+ * that signed. `problem` is the reason a claim stops counting, most important first; `expiresAt`
+ * is the earlier of the two expiries, for "expires soon".
+ */
+async function keyLife(openpgp: typeof import('openpgp'), key: any, clearsigned: string, config: any) {
+  const now = new Date()
+  let issuer: any = null
+  try { issuer = ((await openpgp.readCleartextMessage({ cleartextMessage: clearsigned })) as any).signature.packets[0]?.issuerKeyID ?? null } catch { /* the signature check reports it */ }
+  const signer = issuer && !key.getKeyID().equals(issuer) ? key.subkeys.find((s: any) => s.getKeyID().equals(issuer)) ?? null : key
+  const signingKey = signer ? signer.getFingerprint().toUpperCase() : null
+
+  const safe = async <T,>(f: () => Promise<T>, fallback: T) => { try { return await f() } catch { return fallback } }
+  const keyRevoked = await safe(() => key.isRevoked(undefined, undefined, now, config), false)
+  const keyExp = await safe(() => key.getExpirationTime(undefined, config), null)
+  const isSub = signer && signer !== key
+  const subRevoked = isSub ? await safe(() => signer.isRevoked(null, key.keyPacket, now, config), false) : false
+  const subExp = isSub ? await safe(() => signer.getExpirationTime(null, config), null) : null
+
+  const finite = (d: any) => d instanceof Date && Number.isFinite(d.getTime()) ? d : null
+  const kExp = finite(keyExp), sExp = finite(subExp)
+  let problem: Partial<PGPVerification> | null = null
+  if (keyRevoked) {
+    const r = revocationOf(key.revocationSignatures)
+    problem = { kind: r.compromised ? 'compromised' : 'revoked', at: r.at, revocationReason: r.revocationReason }
+  } else if (kExp && kExp <= now) {
+    problem = { kind: 'expired', at: kExp.toISOString() }
+  } else if (subRevoked) {
+    const r = revocationOf(signer.revocationSignatures)
+    problem = { kind: r.compromised ? 'compromised' : 'signing-key-revoked', at: r.at, revocationReason: r.revocationReason }
+  } else if (sExp && sExp <= now) {
+    problem = { kind: 'signing-key-expired', at: sExp.toISOString() }
+  }
+  const earliest = [kExp, sExp].filter(Boolean).sort((a: any, b: any) => a - b)[0] as Date | undefined
+  return { problem, signingKey, expiresAt: earliest ? earliest.toISOString() : null, algorithm: algorithmName(signer ?? key) }
+}
+
 export async function verifyAttestation({
   pgpPublicKey,
   pgpSignature,
@@ -176,7 +230,7 @@ export async function verifyAttestation({
 }): Promise<PGPVerification> {
   try {
     if (!pgpPublicKey || !pgpSignature) {
-      return { verified: false, reason: 'Missing PGP data' }
+      return { verified: false, reason: 'Missing PGP data', kind: 'bad-signature' }
     }
 
     const openpgp = await import('openpgp')
@@ -185,20 +239,29 @@ export async function verifyAttestation({
     const publicKey = await readKey({ armoredKey: pgpPublicKey })
     const keyFingerprint = publicKey.getFingerprint().toUpperCase()
     if (keyFingerprint !== fingerprint.toUpperCase()) {
-      return { verified: false, reason: 'Key fingerprint mismatch' }
+      return { verified: false, reason: 'Key fingerprint mismatch', kind: 'bad-signature' }
     }
 
+    const life = await keyLife(openpgp, publicKey, pgpSignature, pgpConfig(openpgp))
     const v = await verifyClearsigned({ armoredKey: pgpPublicKey, clearsigned: pgpSignature })
-    if (!v.verified) return { verified: false, reason: v.reason }
+    if (!v.verified) {
+      // Name the cause: the key's life first (the usual way a real claim stops counting), then an
+      // algorithm the library refuses, then the signature itself.
+      if (life.problem) return { verified: false, reason: v.reason, signingKey: life.signingKey, ...life.problem }
+      if (/too weak|reject|unsupported|not supported|unknown (curve|algorithm)/i.test(v.reason || '')) {
+        return { verified: false, reason: v.reason, kind: 'unsupported', algorithm: life.algorithm, signingKey: life.signingKey }
+      }
+      return { verified: false, reason: v.reason, kind: 'bad-signature', signingKey: life.signingKey }
+    }
 
     const signedText = v.text
     if (!signedText.toLowerCase().includes(ethAddress.toLowerCase())) {
-      return { verified: false, reason: 'Signed message does not contain ETH address' }
+      return { verified: false, reason: 'Signed message does not contain ETH address', kind: 'bad-signature', signingKey: life.signingKey }
     }
 
-    return { verified: true }
+    return { verified: true, kind: 'verified', signingKey: life.signingKey, expiresAt: life.expiresAt }
   } catch {
-    return { verified: false, reason: 'Signature verification failed' }
+    return { verified: false, reason: 'Signature verification failed', kind: 'bad-signature' }
   }
 }
 

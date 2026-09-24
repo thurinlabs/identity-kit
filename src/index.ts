@@ -22,6 +22,8 @@ export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, h
 export type { StrippedKey } from './core/pgp'
 export { fetchEFPGraph } from './core/efp'
 export { identityErrorKind, needsRpcProbe, IDENTITY_ERROR_TEXT } from './core/identityError'
+export { CLAIM_CHECK_LABEL, claimCheckText, formatClaimDate, expiresSoon, expiresSoonText, claimFates, claimFateText } from './core/claimStatus'
+export type { ClaimCheckText, ClaimFate } from './core/claimStatus'
 export type { IdentityErrorKind, IdentityLookupState } from './core/identityError'
 export { avatarUrl, avatarFallbacks, parseNftAvatar, nftAvatarImage, NFT_AVATAR_ABI, IPFS_GATEWAY, IPFS_GATEWAYS, ARWEAVE_GATEWAY } from './core/avatar'
 export type { NftAvatar } from './core/avatar'
@@ -43,6 +45,7 @@ export type {
   ThurinIdentity,
   Attestation,
   PGPVerification,
+  ClaimCheckKind,
   PGPKeyInfo,
   SubkeyInfo,
   Notation,
