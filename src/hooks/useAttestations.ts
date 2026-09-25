@@ -1,10 +1,9 @@
 import { useReadContract, useReadContracts } from 'wagmi'
 import { useQuery } from '@tanstack/react-query'
-import { hexToString } from 'viem'
 import { REGISTRY_ABI, getRegistry } from '../core/contract'
 import { bytesToFingerprint } from '../core/fingerprint'
 import { chainFor } from '../provider'
-import { verifyAttestation } from '../core/pgp'
+import { verifyAttestation, payloadText } from '../core/pgp'
 import { useIdentityKitConfig } from '../context'
 import type { Attestation } from '../core/types'
 
@@ -60,8 +59,9 @@ export function useAttestations(address: string | undefined | null) {
         let pgpPublicKey: string | null = null
         if (payload && payload.status === 'success') {
           const [sigHex, keyHex] = payload.result as readonly [`0x${string}`, `0x${string}`]
-          pgpSignature = hexToString(sigHex)
-          pgpPublicKey = hexToString(keyHex)
+          // Older claims store armored text, lean claims raw bytes; both come back as armored text.
+          pgpSignature = await payloadText(sigHex, 'signature')
+          pgpPublicKey = await payloadText(keyHex, 'key')
         }
 
         const fingerprint = bytesToFingerprint(row.fingerprint)

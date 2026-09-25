@@ -67,10 +67,15 @@ export type UpdateKeyAuthorization = Common & { index: bigint; pgpPublicKey: str
 export type RevokeAuthorization = Common & { index: bigint }
 export type SetRecordAuthorization = Common & { index: bigint; kind: Hex; value: Hex }
 
+/** Payload bytes as submitted: `0x…` hex is taken as raw bytes (the lean format), anything else as UTF-8 text (armored). */
+function payloadBytes(v: string): Hex {
+  return /^0x([0-9a-fA-F]{2})*$/.test(v) ? (v as Hex) : stringToHex(v)
+}
+
 /**
  * Build the object to pass to viem/wagmi `signTypedData`. `fingerprint` is the hex
- * fingerprint; `pgpSignature` / `pgpPublicKey` are the armored text exactly as they
- * will be submitted (they are hashed as UTF-8 bytes).
+ * fingerprint; `pgpSignature` / `pgpPublicKey` are exactly what will be submitted: `0x…` hex
+ * for raw bytes (the lean format), or armored text (hashed as UTF-8 bytes).
  */
 export function attestTypedData(chainId: number, registry: Hex, a: AttestAuthorization) {
   return {
@@ -80,8 +85,8 @@ export function attestTypedData(chainId: number, registry: Hex, a: AttestAuthori
     message: {
       owner: a.owner,
       fingerprint: fingerprintToBytes(a.fingerprint),
-      pgpSignature: stringToHex(a.pgpSignature),
-      pgpPublicKey: stringToHex(a.pgpPublicKey),
+      pgpSignature: payloadBytes(a.pgpSignature),
+      pgpPublicKey: payloadBytes(a.pgpPublicKey),
       nonce: a.nonce,
       deadline: a.deadline,
     },
@@ -103,7 +108,7 @@ export function updateKeyTypedData(chainId: number, registry: Hex, a: UpdateKeyA
     domain: registryDomain(chainId, registry),
     types: { UpdateKey: AUTHORIZATION_TYPES.UpdateKey },
     primaryType: 'UpdateKey' as const,
-    message: { owner: a.owner, index: a.index, pgpPublicKey: stringToHex(a.pgpPublicKey), nonce: a.nonce, deadline: a.deadline },
+    message: { owner: a.owner, index: a.index, pgpPublicKey: payloadBytes(a.pgpPublicKey), nonce: a.nonce, deadline: a.deadline },
   }
 }
 
