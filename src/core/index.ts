@@ -2,11 +2,11 @@
  * @thurinlabs/identity-kit/core — the verification and data layer with no React,
  * wagmi, or DOM dependency. This is what the Thurin CLI, the og service, and any
  * Node or worker consumer import. The root entry re-exports all of this plus the
- * React hooks, provider, and ThurinCard.
+ * React hooks and provider.
  */
 export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref, FARCASTER_HUB } from './proofs'
 export type { ProofOptions } from './proofs'
-export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID, verifyStatementSignature, statementText, leanKey, leanSignature, claimSignature, payloadText } from './pgp'
+export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID, verifyStatementSignature, statementText, leanKey, leanSignature, claimSignature, signatureEmail, payloadText } from './pgp'
 export type { StrippedKey, LeanKey, PgpInput } from './pgp'
 export { fetchEFPGraph } from './efp'
 export {
@@ -23,7 +23,7 @@ export type {
 } from './authorization'
 export type {
   ThurinIdentity, Attestation, PGPVerification, ClaimCheckKind, PGPKeyInfo, SubkeyInfo, Notation, Proof,
-  ProofResult, EFPGraph, Theme, IdentityKitConfig,
+  ProofResult, EFPGraph, IdentityKitConfig,
 } from './types'
 export { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry, isNetworkName, chainFor } from './contract'
 export {

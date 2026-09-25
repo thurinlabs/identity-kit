@@ -1,7 +1,7 @@
 import type { Attestation, ClaimCheckKind, PGPVerification } from './types'
 
 /**
- * Plain words for a claim's state, shared by thurin.id, the CLI, and anyone embedding the kit,
+ * Plain words for a claim's state, shared by thurin.id, the CLI, and anyone using the kit,
  * so every surface says the same thing. `sentence` is for visitors; `fix` is for the owner only
  * (thurin.id shows it when the connected wallet owns the claim).
  */

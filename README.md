@@ -10,21 +10,18 @@ npm install @thurinlabs/identity-kit
 
 Two entry points:
 
-- `@thurinlabs/identity-kit`: React components and hooks, plus everything in core. Peer dependencies: `react`, `react-dom`, `wagmi`, `viem`, `@tanstack/react-query`.
+- `@thurinlabs/identity-kit`: React hooks and their provider, plus everything in core. Peer dependencies: `react`, `react-dom`, `wagmi`, `viem`, `@tanstack/react-query`.
 - `@thurinlabs/identity-kit/core`: plain functions, no React or DOM. For Node, workers, and your own UI. Needs only `viem` as a peer.
 
-## The card
+## React
 
 ```tsx
-import { IdentityKitProvider, ThurinCard } from '@thurinlabs/identity-kit'
-import '@thurinlabs/identity-kit/styles'
+import { IdentityKitProvider, useThurinIdentity } from '@thurinlabs/identity-kit'
 
 <IdentityKitProvider>
-  <ThurinCard ens="thurinlabs.eth" theme="thurin" />
+  <YourApp />
 </IdentityKitProvider>
 ```
-
-`ThurinCard` takes `ens` or `address`, and `theme`: `thurin` (the dark Thurin look, default), `dark`, or `light`. It shows the avatar, name, address, claim count, verified proofs, EFP followers, and a link to the identity page.
 
 `IdentityKitProvider` works with no props: it reads through a keyless public node. If your app already has a `WagmiProvider`, it uses that.
 
@@ -35,7 +32,6 @@ import '@thurinlabs/identity-kit/styles'
 | `registryAddress` | `REGISTRY_ADDRESS` | override the registry address |
 | `farcasterHub` | Quilibrium's keyless node | Farcaster node for Farcaster proofs |
 | `neynarApiKey` | none | read Farcaster through Neynar instead |
-| `baseUrl` | `https://thurin.id` | where "View on Thurin" links point |
 
 ## Hooks
 
@@ -83,14 +79,9 @@ The rest of core, all covered in the [docs](https://docs.thurin.id/#/sdk):
 - **Keys:** `parsePgpKey`, `leanKey`, `claimSignature`, `stripEmailUserIDs`, fingerprint and key-ID helpers.
 - **ENS:** `fetchEnsHint`, `ensHintWrite` for the `id.thurin` record.
 
-## Embed, no React
+## A card for your README
 
-```html
-<div data-thurin-card="thurinlabs.eth" data-theme="thurin"></div>
-<script src="identity-kit-embed.js"></script>
-```
-
-Copy `dist/embed.global.js` from the package (`npm pack @thurinlabs/identity-kit`) and serve it yourself, so no CDN sees your visitors. Attributes: `data-theme`, `data-rpc-url`, `data-network`, `data-registry-address`, `data-farcaster-hub`, `data-neynar-key`, `data-base-url`. Change `data-theme` later and the card follows.
+No library needed: thurin.id draws an image of any identity (name, key, and whether it's verified), `https://thurin.id/card/ens/<name>.png`. See [the docs](https://docs.thurin.id/#/sdk?id=readme-card).
 
 ## Key algorithms
 
@@ -107,6 +98,7 @@ Anything openpgp.js can verify: Ed25519, Cv25519, NIST P-256/384/521, brainpool,
 | typed data `pgpSignature`, `pgpPublicKey` | `signature`, `key`; `Reattest` adds `keepRecords`, `Revoke` adds `reason`, `SetRecord` takes text; new `MarkCompromised` |
 | `encodeRecord`, `decodeRecord`, `bytes32` kinds | text records listed by `recordsOf`; `checkKindName`, `checkRecordValue` |
 | `RegistryDeployment.deployBlock` | removed |
+| `ThurinCard`, the embed script, `/styles`, `Theme`, the `baseUrl` prop | removed; use the [card image](https://docs.thurin.id/#/sdk?id=readme-card) |
 | a statement containing the address verified | the signed text must be exactly the statement |
 
 ## Development

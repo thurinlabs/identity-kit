@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import * as openpgp from 'openpgp'
-import { leanKey, leanSignature, claimSignature, verifyAttestation, parsePgpKey, statementText, payloadText } from '../pgp'
+import { leanKey, leanSignature, claimSignature, verifyAttestation, parsePgpKey, statementText, payloadText, signatureEmail } from '../pgp'
 
 // Fixtures made with gpg from a throwaway key (public data only): an email name, a plain name, a
 // revoked name, and signing / encryption / authentication subkeys. `lean-gpg-key.gpg` is gpg's own
@@ -125,5 +125,31 @@ describe('the lean format verifies (gpg interop)', () => {
     expect(r.verified).toBe(true)
     const clear = text('lean-echo-clearsign.asc')
     expect(await payloadText('0x' + Buffer.from(clear).toString('hex'), 'signature')).toBe(clear)
+  })
+})
+
+describe('signatureEmail: an email gpg wrote into the signature', () => {
+  const fixture = (name: string) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8')
+  it('finds it when gpg was told the key by email, detached or clearsigned', async () => {
+    expect(await signatureEmail(fixture('signer-uid.asc'))).toBe('fixture@example.com')
+    expect(await signatureEmail(fixture('signer-uid-clearsigned.asc'))).toBe('fixture@example.com')
+  })
+  it('finds nothing with --disable-signer-uid, or on something that is not a signature', async () => {
+    expect(await signatureEmail(fixture('signer-uid-disabled.asc'))).toBeNull()
+    expect(await signatureEmail('not a signature')).toBeNull()
+  })
+})
+
+describe('leanKey: emails in notations', () => {
+  const key = readFileSync(new URL('./fixtures/notation-email-key.asc', import.meta.url), 'utf8')
+  it('leaves out a name whose notation holds an email, and keeps a Mastodon proof', async () => {
+    const lean = (await leanKey(key))!
+    expect(lean.kept).toEqual(['Plain Name'])
+    expect(lean.removed).toEqual(['Other Name'])
+    expect(new TextDecoder().decode(lean.binary)).not.toContain('hidden@example.com')
+    expect((await parsePgpKey(lean.binary))!.notations.map(n => n.value)).toEqual(['https://mastodon.social/@probe'])
+  })
+  it('keeps it all with includeEmail', async () => {
+    expect((await leanKey(key, { includeEmail: true }))!.kept.sort()).toEqual(['Other Name', 'Plain Name'])
   })
 })

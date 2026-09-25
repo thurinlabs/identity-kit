@@ -352,6 +352,20 @@ export interface StrippedKey {
 }
 
 const EMAIL_UID = /@/
+// An email inside a notation value: a local part right before the @. Mastodon proof URLs
+// (https://mastodon.social/@user) have a / before the @, so they don't match.
+const EMAIL_IN_TEXT = /(?:^|[^\w/.+-])([\w.+-]+@[\w-]+(?:\.[\w-]+)+)/
+
+/** Email addresses in a signature's notation values. */
+function notationEmails(sig: any): string[] {
+  const out: string[] = []
+  for (const n of sig?.rawNotations ?? []) {
+    const text = typeof n.value === 'string' ? n.value : new TextDecoder().decode(n.value)
+    const m = text.match(EMAIL_IN_TEXT)
+    if (m) out.push(m[1])
+  }
+  return out
+}
 
 /**
  * Remove every user ID that contains an email address, keeping the rest (and
@@ -397,7 +411,10 @@ export interface LeanKey {
   /** The key to store, as raw bytes. */
   binary: Uint8Array
   kept: string[]
+  /** Names left out: they contain an email, or a notation on them does. */
   removed: string[]
+  /** Emails in notations on the key itself (not on a name), which can't be left out: refuse to publish these. */
+  keyNotationEmails: string[]
   /** Fingerprints of authentication-only subkeys left out. */
   droppedSubkeys: string[]
 }
@@ -417,21 +434,24 @@ export async function leanKey(input: PgpInput, { includeEmail = false }: { inclu
     const key: any = await readKeyAny(openpgp, input)
     const kept: string[] = []
     const removed: string[] = []
-    const users = key.users.filter((u: any) => {
-      const uid: string | undefined = u.userID?.userID
-      if (!uid) return false
-      if (!includeEmail && EMAIL_UID.test(uid)) { removed.push(uid); return false }
-      kept.push(uid)
-      return true
-    })
-    if (users.length === 0) return null
     // Like gpg's export-minimal: the newest self-signature per user ID and per subkey, no
     // third-party certifications. Revocations always stay.
     const newest = (sigs: any[] = []) => sigs.length ? [[...sigs].sort((x: any, y: any) => (y.created?.getTime?.() ?? 0) - (x.created?.getTime?.() ?? 0))[0]] : []
     // A revoked user ID keeps only its revocation (as gpg does): its self-signature adds nothing.
-    for (const u of users) { u.selfCertifications = u.revocationSignatures?.length ? [] : newest(u.selfCertifications); u.otherCertifications = [] }
+    for (const u of key.users) { u.selfCertifications = u.revocationSignatures?.length ? [] : newest(u.selfCertifications); u.otherCertifications = [] }
+    // A name goes when it holds an email, or a notation on it does (a notation can't be cut out
+    // of its signature without breaking it).
+    const users = key.users.filter((u: any) => {
+      const uid: string | undefined = u.userID?.userID
+      if (!uid) return false
+      if (!includeEmail && (EMAIL_UID.test(uid) || u.selfCertifications.some((c: any) => notationEmails(c).length))) { removed.push(uid); return false }
+      kept.push(uid)
+      return true
+    })
+    if (users.length === 0) return null
     key.users = users
     key.directSignatures = newest(key.directSignatures)
+    const keyNotationEmails = includeEmail ? [] : key.directSignatures.flatMap(notationEmails)
     for (const sk of key.subkeys) sk.bindingSignatures = newest(sk.bindingSignatures)
 
     const { keyFlags } = openpgp.enums
@@ -444,7 +464,7 @@ export async function leanKey(input: PgpInput, { includeEmail = false }: { inclu
       if (authOnly) droppedSubkeys.push(sk.getFingerprint().toUpperCase())
       return !authOnly
     })
-    return { binary: key.write(), kept, removed, droppedSubkeys }
+    return { binary: key.write(), kept, removed, keyNotationEmails, droppedSubkeys }
   } catch {
     return null
   }
@@ -480,6 +500,26 @@ export async function claimSignature({ signature, key, address }: { signature: P
     const packet: Uint8Array = sig.signature.write()
     if ((await verifyStatementSignature({ key, signature: packet, address })).verified) return { signature: packet, messageVersion: 1 }
     return { signature: normalizeInput(signature) as string, messageVersion: 0 }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * The email gpg wrote into a signature, or null. gpg adds a "signer's user ID" when it is told
+ * which key to use by an email or name (`-u me@example.com`), or when gpg.conf sets `sender`. It
+ * is part of what's signed, so it can't be removed, and a claim keeps its signature on-chain for
+ * good. `gpg --disable-signer-uid` leaves it out. Works on a detached signature or a clearsigned text.
+ */
+export async function signatureEmail(signature: PgpInput): Promise<string | null> {
+  try {
+    const openpgp = await import('openpgp')
+    const { packets } = await readSignatureAny(openpgp, signature)
+    for (const p of packets) {
+      const uid: string | null = p.signersUserID ?? null
+      if (uid && uid.includes('@')) return uid
+    }
+    return null
   } catch {
     return null
   }

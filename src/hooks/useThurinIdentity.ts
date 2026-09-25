@@ -76,9 +76,9 @@ export function useThurinIdentity(ensOrAddress: string | undefined | null): Thur
   // number before saying anything about the identity (core/identityError.ts).
   const lookup = { ensEmpty: !!ensInput && ensFetched && !resolvedAddress, ensFailed: !!ensError, claimsFailed: !!claimsError }
   const probeNeeded = needsRpcProbe(lookup)
-  // useBlockNumber, not usePublicClient: the latter attaches every public action to the client,
-  // which put ~360 KB more into the standalone embed (1.3.4). Own scope per identity and no
-  // caching, so an earlier answer can't make a dead RPC look alive.
+  // useBlockNumber, not usePublicClient: the latter attaches every public action to the client
+  // (a few hundred KB). Own scope per identity and no caching, so an earlier answer can't make a
+  // dead RPC look alive.
   const probe = useBlockNumber({
     chainId: chain.id,
     scopeKey: `thurin-rpc-probe:${ensOrAddress ?? ''}`,

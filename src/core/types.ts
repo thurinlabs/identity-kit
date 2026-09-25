@@ -38,7 +38,7 @@ export interface PGPVerification {
   verified: boolean
   /** The underlying library message, for logs; show `kind` to people instead. */
   reason?: string
-  /** Since 1.4.0. */
+  /** Why a claim doesn't count, or `verified`. */
   kind?: ClaimCheckKind
   /** ISO date that goes with `kind`: when the key or subkey expired or was revoked. */
   at?: string | null
@@ -123,7 +123,6 @@ export interface ThurinIdentity {
   retry: () => void
 }
 
-export type Theme = 'thurin' | 'dark' | 'light'
 
 export interface IdentityKitConfig {
   rpcUrl?: string
@@ -131,7 +130,6 @@ export interface IdentityKitConfig {
   neynarApiKey?: string
   /** A Farcaster node's HTTP API for Farcaster proofs. Default: Quilibrium's public Hypersnap node (keyless). */
   farcasterHub?: string
-  baseUrl?: string
   /** Which PGPRegistry deployment to read: 'mainnet' (default), 'sepolia', or 'local' (anvil). */
   network?: 'mainnet' | 'sepolia' | 'local'
   /** Override the registry address (e.g. a local deploy that landed elsewhere). */

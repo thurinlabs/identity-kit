@@ -414,7 +414,7 @@ describe('GitHub repository proofs (organisations)', () => {
     } as Response)
     const proof = { provider: 'github', label: 'GitHub', url: '', user: 'thurinlabs', repo: 'thurin-proof' }
     expect((await verifyProof(proof, fingerprint)).verified).toBe(true)
-    expect(globalThis.fetch).toHaveBeenCalledWith('https://api.github.com/repos/thurinlabs/thurin-proof')
+    expect(globalThis.fetch).toHaveBeenCalledWith('https://api.github.com/repos/thurinlabs/thurin-proof', expect.objectContaining({ referrerPolicy: 'no-referrer' }))
   })
 
   it('rejects a repository that GitHub redirected to another owner', async () => {

@@ -1,6 +1,10 @@
 import { keyIdHex } from './fingerprint'
 import type { Notation, Proof, PGPVerification } from './types'
 
+// Every outside request says nothing about the page that made it, even on a site whose own
+// referrer policy would.
+const get = (url: string, init: RequestInit = {}) => fetch(url, { referrerPolicy: 'no-referrer', ...init })
+
 const PROVIDERS: {
   provider: string
   label: string
@@ -106,7 +110,7 @@ function containsFingerprintUrl(text: string, fingerprint: string): boolean {
 async function verifyGitHub(proof: Proof, fingerprint: string): Promise<PGPVerification> {
   if (proof.repo) return verifyGitHubRepo(proof, fingerprint)
   try {
-    const resp = await fetch(`https://api.github.com/gists/${proof.gistId}`)
+    const resp = await get(`https://api.github.com/gists/${proof.gistId}`)
     if (!resp.ok) return { verified: false, reason: `GitHub API returned ${resp.status}` }
     const data = await resp.json()
 
@@ -130,7 +134,7 @@ async function verifyGitHub(proof: Proof, fingerprint: string): Promise<PGPVerif
 
 async function verifyGitHubRepo(proof: Proof, fingerprint: string): Promise<PGPVerification> {
   try {
-    const resp = await fetch(
+    const resp = await get(
       `https://api.github.com/repos/${encodeURIComponent(proof.user!)}/${encodeURIComponent(proof.repo!)}`,
     )
     if (!resp.ok) return { verified: false, reason: `GitHub API returned ${resp.status}` }
@@ -154,7 +158,7 @@ async function verifyGitHubRepo(proof: Proof, fingerprint: string): Promise<PGPV
 
 async function verifyDNS(proof: Proof, fingerprint: string): Promise<PGPVerification> {
   try {
-    const resp = await fetch(
+    const resp = await get(
       `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(proof.domain!)}&type=TXT`,
       { headers: { Accept: 'application/dns-json' } },
     )
@@ -205,7 +209,7 @@ async function verifyFarcaster(
   const { base, headers } = farcasterSource(opts)
   const host = base.replace(/^https?:\/\//, '')
   try {
-    const nameResp = await fetch(`${base}/v1/userNameProofByName?name=${encodeURIComponent(proof.user!)}`, { headers })
+    const nameResp = await get(`${base}/v1/userNameProofByName?name=${encodeURIComponent(proof.user!)}`, { headers })
     if (nameResp.status === 404) return { verified: false, reason: `Could not resolve Farcaster user "${proof.user}"` }
     if (!nameResp.ok) return { verified: false, reason: `Couldn't check: the Farcaster node (${host}) returned ${nameResp.status}` }
     const fid = (await nameResp.json()).fid
@@ -214,7 +218,7 @@ async function verifyFarcaster(
     let pageToken = ''
     for (let page = 0; page < 5; page++) {
       const url = `${base}/v1/castsByFid?fid=${fid}&pageSize=100&reverse=true${pageToken ? `&pageToken=${pageToken}` : ''}`
-      const resp = await fetch(url, { headers })
+      const resp = await get(url, { headers })
       if (!resp.ok) return { verified: false, reason: `Couldn't check: the Farcaster node (${host}) returned ${resp.status}` }
       const data = await resp.json()
 
@@ -241,7 +245,7 @@ async function verifyFarcaster(
 
 async function verifyCodeberg(proof: Proof, fingerprint: string): Promise<PGPVerification> {
   try {
-    const resp = await fetch(
+    const resp = await get(
       `https://codeberg.org/api/v1/repos/${encodeURIComponent(proof.user!)}/${encodeURIComponent(proof.repo!)}`,
     )
     if (!resp.ok) return { verified: false, reason: `Codeberg API returned ${resp.status}` }
@@ -270,7 +274,7 @@ async function verifyMastodon(proof: Proof, fingerprint: string): Promise<PGPVer
     if (!proof.instance || !/^[a-z0-9.-]+(?::\d+)?$/i.test(proof.instance)) {
       return { verified: false, reason: 'Invalid Mastodon instance host' }
     }
-    const resp = await fetch(
+    const resp = await get(
       `https://${proof.instance}/api/v1/accounts/lookup?acct=${encodeURIComponent(proof.user!)}`,
     )
     if (!resp.ok) return { verified: false, reason: `Mastodon API returned ${resp.status}` }

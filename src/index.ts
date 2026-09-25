@@ -2,10 +2,6 @@
 export { IdentityKitProvider } from './provider'
 export type { IdentityKitProviderProps } from './provider'
 
-// Components
-export { ThurinCard } from './components/ThurinCard/ThurinCard'
-export type { ThurinCardProps } from './components/ThurinCard/ThurinCard'
-
 // Hooks
 export { useThurinIdentity } from './hooks/useThurinIdentity'
 export { useAttestations } from './hooks/useAttestations'
@@ -18,7 +14,7 @@ export { useSafeAvatar } from './hooks/useSafeAvatar'
 // Core utilities
 export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref, FARCASTER_HUB } from './core/proofs'
 export type { ProofOptions } from './core/proofs'
-export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID, verifyStatementSignature, statementText, leanKey, leanSignature, claimSignature, payloadText } from './core/pgp'
+export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID, verifyStatementSignature, statementText, leanKey, leanSignature, claimSignature, signatureEmail, payloadText } from './core/pgp'
 export type { StrippedKey, LeanKey, PgpInput } from './core/pgp'
 export { fetchEFPGraph } from './core/efp'
 export { identityErrorKind, needsRpcProbe, IDENTITY_ERROR_TEXT } from './core/identityError'
@@ -52,7 +48,6 @@ export type {
   Proof,
   ProofResult,
   EFPGraph,
-  Theme,
   IdentityKitConfig,
 } from './core/types'
 

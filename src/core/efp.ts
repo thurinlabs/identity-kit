@@ -1,5 +1,9 @@
 import type { EFPGraph } from './types'
 
+// Every outside request says nothing about the page that made it, even on a site whose own
+// referrer policy would.
+const get = (url: string, init: RequestInit = {}) => fetch(url, { referrerPolicy: 'no-referrer', ...init })
+
 const EFP_API = 'https://api.ethfollow.xyz/api/v1'
 
 /**
@@ -11,8 +15,8 @@ const EFP_API = 'https://api.ethfollow.xyz/api/v1'
 export async function fetchEFPGraph(address: string): Promise<EFPGraph | null> {
   try {
     const [statsResp, listsResp] = await Promise.all([
-      fetch(`${EFP_API}/users/${address}/stats`),
-      fetch(`${EFP_API}/users/${address}/lists`),
+      get(`${EFP_API}/users/${address}/stats`),
+      get(`${EFP_API}/users/${address}/lists`),
     ])
     if (!statsResp.ok && !listsResp.ok) return null
 
@@ -25,8 +29,8 @@ export async function fetchEFPGraph(address: string): Promise<EFPGraph | null> {
     let top8: string[] = []
     if (listId) {
       const [followingResp, top8Resp] = await Promise.all([
-        fetch(`${EFP_API}/lists/${listId}/following?limit=100`),
-        fetch(`${EFP_API}/lists/${listId}/following?limit=8&tags=top8`),
+        get(`${EFP_API}/lists/${listId}/following?limit=100`),
+        get(`${EFP_API}/lists/${listId}/following?limit=8&tags=top8`),
       ])
       const followingData = followingResp.ok ? await followingResp.json() : { following: [] }
       const top8Data = top8Resp.ok ? await top8Resp.json() : { following: [] }
