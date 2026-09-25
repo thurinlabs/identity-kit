@@ -8,7 +8,6 @@ export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref, 
 export type { ProofOptions } from './proofs'
 export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID, verifyStatementSignature, statementText, leanKey, leanSignature, claimSignature, signatureEmail, payloadText } from './pgp'
 export type { StrippedKey, LeanKey, PgpInput } from './pgp'
-export { fetchEFPGraph } from './efp'
 export {
   normalizeFingerprint, fingerprintToBytes, bytesToFingerprint, fingerprintHash, keyIdOf, keyIdToBytes,
 } from './fingerprint'
@@ -23,7 +22,7 @@ export type {
 } from './authorization'
 export type {
   ThurinIdentity, Attestation, PGPVerification, ClaimCheckKind, PGPKeyInfo, SubkeyInfo, Notation, Proof,
-  ProofResult, EFPGraph, IdentityKitConfig,
+  ProofResult, IdentityKitConfig,
 } from './types'
 export { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry, isNetworkName, chainFor } from './contract'
 export {

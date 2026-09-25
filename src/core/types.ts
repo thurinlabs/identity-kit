@@ -96,13 +96,6 @@ export interface ProofResult {
   reason?: string
 }
 
-export interface EFPGraph {
-  followers: number
-  following: number
-  top8: string[]
-  hasEfp: boolean
-}
-
 export interface ThurinIdentity {
   address: string | null
   ensName: string | null
@@ -113,7 +106,6 @@ export interface ThurinIdentity {
   currentFingerprint: string | null
   pgpKeyInfo: PGPKeyInfo | null
   proofs: ProofResult[]
-  efp: EFPGraph | null
   isLoading: boolean
   /** Set when the identity couldn't be shown; the message is plain and safe to display. */
   error: Error | null

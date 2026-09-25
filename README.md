@@ -38,12 +38,12 @@ import { IdentityKitProvider, useThurinIdentity } from '@thurinlabs/identity-kit
 ```tsx
 const id = useThurinIdentity('thurinlabs.eth')   // or an address
 // id.address, ensName, ensAvatar, claims, totalClaims, activeClaims,
-// currentFingerprint, pgpKeyInfo, proofs, efp, isLoading, error, errorKind, retry()
+// currentFingerprint, pgpKeyInfo, proofs, isLoading, error, errorKind, retry()
 ```
 
 `currentFingerprint` is the newest active claim whose signature verifies. Nothing from an unverified claim is shown.
 
-Also `useAttestations(address)`, `usePGPProofs(fingerprint, armoredKey)`, `useRecords(address, index)`, `useEnsHint(name, fingerprint)`, `useEFPGraph(address)`, and `useSafeAvatar(name, chainId)`. Avatars only load from places that can't see the viewer: IPFS, Arweave, inline data, a content-addressed NFT, or `euc.li`.
+Also `useAttestations(address)`, `usePGPProofs(fingerprint, armoredKey)`, `useRecords(address, index)`, `useEnsHint(name, fingerprint)`, and `useSafeAvatar(name, chainId)`. Avatars only load from places that can't see the viewer: IPFS, Arweave, inline data, a content-addressed NFT, or `euc.li`.
 
 ## Core
 

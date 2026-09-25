@@ -5,7 +5,6 @@ export type { IdentityKitProviderProps } from './provider'
 // Hooks
 export { useThurinIdentity } from './hooks/useThurinIdentity'
 export { useAttestations } from './hooks/useAttestations'
-export { useEFPGraph } from './hooks/useEFPGraph'
 export { usePGPProofs } from './hooks/usePGPProofs'
 export { useEnsHint } from './hooks/useEnsHint'
 export { useRecords } from './hooks/useRecords'
@@ -16,7 +15,6 @@ export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref, 
 export type { ProofOptions } from './core/proofs'
 export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID, verifyStatementSignature, statementText, leanKey, leanSignature, claimSignature, signatureEmail, payloadText } from './core/pgp'
 export type { StrippedKey, LeanKey, PgpInput } from './core/pgp'
-export { fetchEFPGraph } from './core/efp'
 export { identityErrorKind, needsRpcProbe, IDENTITY_ERROR_TEXT } from './core/identityError'
 export { CLAIM_CHECK_LABEL, claimCheckText, formatClaimDate, expiresSoon, expiresSoonText, claimFates, claimFateText } from './core/claimStatus'
 export type { ClaimCheckText, ClaimFate } from './core/claimStatus'
@@ -47,7 +45,6 @@ export type {
   Notation,
   Proof,
   ProofResult,
-  EFPGraph,
   IdentityKitConfig,
 } from './core/types'
 

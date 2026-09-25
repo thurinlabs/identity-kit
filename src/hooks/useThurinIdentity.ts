@@ -4,7 +4,6 @@ import { useIdentityKitConfig } from '../context'
 import { chainFor } from '../provider'
 import { normalize } from 'viem/ens'
 import { useAttestations } from './useAttestations'
-import { useEFPGraph } from './useEFPGraph'
 import { usePGPProofs } from './usePGPProofs'
 import { useSafeAvatar } from './useSafeAvatar'
 import type { ThurinIdentity } from '../core/types'
@@ -69,9 +68,6 @@ export function useThurinIdentity(ensOrAddress: string | undefined | null): Thur
     isLoading: proofsLoading,
   } = usePGPProofs(currentFingerprint, currentClaim?.pgpPublicKey ?? null)
 
-  // EFP social graph
-  const { efp, isLoading: efpLoading } = useEFPGraph(address)
-
   // An empty ENS result or a failed read might just be a dead RPC; ask it for the block
   // number before saying anything about the identity (core/identityError.ts).
   const lookup = { ensEmpty: !!ensInput && ensFetched && !resolvedAddress, ensFailed: !!ensError, claimsFailed: !!claimsError }
@@ -103,10 +99,9 @@ export function useThurinIdentity(ensOrAddress: string | undefined | null): Thur
     currentFingerprint,
     pgpKeyInfo,
     proofs,
-    efp,
     // "Not finished" counts as loading, including queries paused in a background tab: the card
     // must not render defaults (zeros) for an identity it hasn't looked up yet.
-    isLoading: (!!ensInput && !ensFetched) || claimsLoading || proofsLoading || efpLoading || probing,
+    isLoading: (!!ensInput && !ensFetched) || claimsLoading || proofsLoading || probing,
     error: errorKind ? new Error(IDENTITY_ERROR_TEXT[errorKind]) : null,
     errorKind,
     retry,
