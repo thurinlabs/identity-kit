@@ -54,7 +54,59 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "function",
+    "name": "EPOCH",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_CLAIMS_PER_OWNER",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "MAX_KEY_BYTES",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_KIND_BYTES",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_PAYLOAD_BYTES",
     "inputs": [],
     "outputs": [
       {
@@ -80,7 +132,7 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "function",
-    "name": "MAX_SIG_BYTES",
+    "name": "MAX_SIGNATURE_BYTES",
     "inputs": [],
     "outputs": [
       {
@@ -93,7 +145,20 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "function",
-    "name": "MESSAGE_VERSION",
+    "name": "MESSAGE_CLEARSIGNED",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MESSAGE_DETACHED",
     "inputs": [],
     "outputs": [
       {
@@ -171,67 +236,43 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "function",
-    "name": "addressesFor",
+    "name": "armorToBytes",
     "inputs": [
       {
-        "name": "fingerprintHash",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        "name": "armored",
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "outputs": [
       {
         "name": "",
-        "type": "address[]",
-        "internalType": "address[]"
+        "type": "bytes",
+        "internalType": "bytes"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "pure"
   },
   {
     "type": "function",
-    "name": "addressesForCount",
+    "name": "armoredKey",
     "inputs": [
       {
-        "name": "fingerprintHash",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "addressesForRange",
-    "inputs": [
-      {
-        "name": "fingerprintHash",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
       },
       {
-        "name": "start",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "count",
+        "name": "index",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
     "outputs": [
       {
-        "name": "out",
-        "type": "address[]",
-        "internalType": "address[]"
+        "name": "",
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "stateMutability": "view"
@@ -246,12 +287,12 @@ export const REGISTRY_ABI = [
         "internalType": "bytes"
       },
       {
-        "name": "pgpSignature",
+        "name": "signature",
         "type": "bytes",
         "internalType": "bytes"
       },
       {
-        "name": "pgpPublicKey",
+        "name": "key",
         "type": "bytes",
         "internalType": "bytes"
       }
@@ -280,12 +321,12 @@ export const REGISTRY_ABI = [
         "internalType": "bytes"
       },
       {
-        "name": "pgpSignature",
+        "name": "signature",
         "type": "bytes",
         "internalType": "bytes"
       },
       {
-        "name": "pgpPublicKey",
+        "name": "key",
         "type": "bytes",
         "internalType": "bytes"
       },
@@ -295,7 +336,7 @@ export const REGISTRY_ABI = [
         "internalType": "uint256"
       },
       {
-        "name": "signature",
+        "name": "permission",
         "type": "bytes",
         "internalType": "bytes"
       }
@@ -311,39 +352,37 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "function",
-    "name": "attestationCount",
+    "name": "cancelAuthorization",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "claim",
     "inputs": [
       {
         "name": "owner",
         "type": "address",
         "internalType": "address"
-      }
-    ],
-    "outputs": [
+      },
       {
-        "name": "",
+        "name": "index",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "attestationsOf",
-    "inputs": [
-      {
-        "name": "owner",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
     "outputs": [
       {
-        "name": "",
-        "type": "tuple[]",
-        "internalType": "struct PGPRegistry.Attestation[]",
+        "name": "details",
+        "type": "tuple",
+        "internalType": "struct PGPRegistry.ClaimView",
         "components": [
+          {
+            "name": "index",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
           {
             "name": "fingerprint",
             "type": "bytes",
@@ -360,19 +399,119 @@ export const REGISTRY_ABI = [
             "internalType": "uint64"
           },
           {
+            "name": "state",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "replacedBy",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "revokeReason",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
             "name": "messageVersion",
             "type": "uint8",
             "internalType": "uint8"
+          }
+        ]
+      },
+      {
+        "name": "key",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "statement",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "recordKinds",
+        "type": "string[]",
+        "internalType": "string[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "claimCount",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "claimsOf",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out",
+        "type": "tuple[]",
+        "internalType": "struct PGPRegistry.ClaimView[]",
+        "components": [
+          {
+            "name": "index",
+            "type": "uint256",
+            "internalType": "uint256"
           },
           {
-            "name": "keyPtr",
-            "type": "address",
-            "internalType": "address"
+            "name": "fingerprint",
+            "type": "bytes",
+            "internalType": "bytes"
           },
           {
-            "name": "sigPtr",
-            "type": "address",
-            "internalType": "address"
+            "name": "createdAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "revokedAt",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "state",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "replacedBy",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "revokeReason",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "messageVersion",
+            "type": "uint8",
+            "internalType": "uint8"
           }
         ]
       }
@@ -381,7 +520,7 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "function",
-    "name": "attestationsOfRange",
+    "name": "claimsOfRange",
     "inputs": [
       {
         "name": "owner",
@@ -403,8 +542,13 @@ export const REGISTRY_ABI = [
       {
         "name": "out",
         "type": "tuple[]",
-        "internalType": "struct PGPRegistry.Attestation[]",
+        "internalType": "struct PGPRegistry.ClaimView[]",
         "components": [
+          {
+            "name": "index",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
           {
             "name": "fingerprint",
             "type": "bytes",
@@ -421,19 +565,24 @@ export const REGISTRY_ABI = [
             "internalType": "uint64"
           },
           {
+            "name": "state",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "replacedBy",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "revokeReason",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
             "name": "messageVersion",
             "type": "uint8",
             "internalType": "uint8"
-          },
-          {
-            "name": "keyPtr",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "sigPtr",
-            "type": "address",
-            "internalType": "address"
           }
         ]
       }
@@ -442,10 +591,27 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "function",
-    "name": "cancelAuthorization",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    "name": "clearsigned",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -469,10 +635,15 @@ export const REGISTRY_ABI = [
         "internalType": "uint256"
       },
       {
-        "name": "attestation",
+        "name": "details",
         "type": "tuple",
-        "internalType": "struct PGPRegistry.Attestation",
+        "internalType": "struct PGPRegistry.ClaimView",
         "components": [
+          {
+            "name": "index",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
           {
             "name": "fingerprint",
             "type": "bytes",
@@ -489,21 +660,69 @@ export const REGISTRY_ABI = [
             "internalType": "uint64"
           },
           {
+            "name": "state",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "replacedBy",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "revokeReason",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
             "name": "messageVersion",
             "type": "uint8",
             "internalType": "uint8"
-          },
-          {
-            "name": "keyPtr",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "sigPtr",
-            "type": "address",
-            "internalType": "address"
           }
         ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "eip712Domain",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "fields",
+        "type": "bytes1",
+        "internalType": "bytes1"
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "version",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "chainId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "verifyingContract",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "salt",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "extensions",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
       }
     ],
     "stateMutability": "view"
@@ -577,7 +796,7 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "function",
-    "name": "getAttestation",
+    "name": "keyBytes",
     "inputs": [
       {
         "name": "owner",
@@ -592,80 +811,38 @@ export const REGISTRY_ABI = [
     ],
     "outputs": [
       {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct PGPRegistry.Attestation",
-        "components": [
-          {
-            "name": "fingerprint",
-            "type": "bytes",
-            "internalType": "bytes"
-          },
-          {
-            "name": "createdAt",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "revokedAt",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "messageVersion",
-            "type": "uint8",
-            "internalType": "uint8"
-          },
-          {
-            "name": "keyPtr",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "sigPtr",
-            "type": "address",
-            "internalType": "address"
-          }
-        ]
+        "name": "key",
+        "type": "bytes",
+        "internalType": "bytes"
       }
     ],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "getPayload",
+    "name": "multicall",
     "inputs": [
       {
-        "name": "owner",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "index",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "calls",
+        "type": "bytes[]",
+        "internalType": "bytes[]"
       }
     ],
     "outputs": [
       {
-        "name": "pgpSignature",
-        "type": "bytes",
-        "internalType": "bytes"
-      },
-      {
-        "name": "pgpPublicKey",
-        "type": "bytes",
-        "internalType": "bytes"
+        "name": "results",
+        "type": "bytes[]",
+        "internalType": "bytes[]"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
     "name": "nonces",
     "inputs": [
       {
-        "name": "",
+        "name": "owner",
         "type": "address",
         "internalType": "address"
       }
@@ -675,6 +852,73 @@ export const REGISTRY_ABI = [
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ownersOf",
+    "inputs": [
+      {
+        "name": "fingerprint",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ownersOfCount",
+    "inputs": [
+      {
+        "name": "fingerprint",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ownersOfRange",
+    "inputs": [
+      {
+        "name": "fingerprint",
+        "type": "bytes",
+        "internalType": "bytes"
+      },
+      {
+        "name": "start",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "count",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "out",
+        "type": "address[]",
+        "internalType": "address[]"
       }
     ],
     "stateMutability": "view"
@@ -694,14 +938,19 @@ export const REGISTRY_ABI = [
         "internalType": "bytes"
       },
       {
-        "name": "pgpSignature",
+        "name": "signature",
         "type": "bytes",
         "internalType": "bytes"
       },
       {
-        "name": "pgpPublicKey",
+        "name": "key",
         "type": "bytes",
         "internalType": "bytes"
+      },
+      {
+        "name": "keepRecords",
+        "type": "bool",
+        "internalType": "bool"
       }
     ],
     "outputs": [
@@ -733,14 +982,19 @@ export const REGISTRY_ABI = [
         "internalType": "bytes"
       },
       {
-        "name": "pgpSignature",
+        "name": "signature",
         "type": "bytes",
         "internalType": "bytes"
       },
       {
-        "name": "pgpPublicKey",
+        "name": "key",
         "type": "bytes",
         "internalType": "bytes"
+      },
+      {
+        "name": "keepRecords",
+        "type": "bool",
+        "internalType": "bool"
       },
       {
         "name": "deadline",
@@ -748,7 +1002,7 @@ export const REGISTRY_ABI = [
         "internalType": "uint256"
       },
       {
-        "name": "signature",
+        "name": "permission",
         "type": "bytes",
         "internalType": "bytes"
       }
@@ -764,7 +1018,7 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "function",
-    "name": "record",
+    "name": "recordText",
     "inputs": [
       {
         "name": "owner",
@@ -778,15 +1032,44 @@ export const REGISTRY_ABI = [
       },
       {
         "name": "kind",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "outputs": [
       {
         "name": "",
-        "type": "bytes",
-        "internalType": "bytes"
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "recordsOf",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "kinds",
+        "type": "string[]",
+        "internalType": "string[]"
+      },
+      {
+        "name": "values",
+        "type": "string[]",
+        "internalType": "string[]"
       }
     ],
     "stateMutability": "view"
@@ -799,6 +1082,11 @@ export const REGISTRY_ABI = [
         "name": "index",
         "type": "uint256",
         "internalType": "uint256"
+      },
+      {
+        "name": "reason",
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "outputs": [],
@@ -819,12 +1107,17 @@ export const REGISTRY_ABI = [
         "internalType": "uint256"
       },
       {
+        "name": "reason",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
         "name": "deadline",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "signature",
+        "name": "permission",
         "type": "bytes",
         "internalType": "bytes"
       }
@@ -843,13 +1136,13 @@ export const REGISTRY_ABI = [
       },
       {
         "name": "kind",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        "type": "string",
+        "internalType": "string"
       },
       {
         "name": "value",
-        "type": "bytes",
-        "internalType": "bytes"
+        "type": "string",
+        "internalType": "string"
       }
     ],
     "outputs": [],
@@ -871,13 +1164,13 @@ export const REGISTRY_ABI = [
       },
       {
         "name": "kind",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        "type": "string",
+        "internalType": "string"
       },
       {
         "name": "value",
-        "type": "bytes",
-        "internalType": "bytes"
+        "type": "string",
+        "internalType": "string"
       },
       {
         "name": "deadline",
@@ -885,13 +1178,90 @@ export const REGISTRY_ABI = [
         "internalType": "uint256"
       },
       {
-        "name": "signature",
+        "name": "permission",
         "type": "bytes",
         "internalType": "bytes"
       }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "signatureBytes",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "signature",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "statementFor",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "summary",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "total",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "active",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "hasCurrent",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "currentIndex",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -903,7 +1273,7 @@ export const REGISTRY_ABI = [
         "internalType": "uint256"
       },
       {
-        "name": "pgpPublicKey",
+        "name": "key",
         "type": "bytes",
         "internalType": "bytes"
       }
@@ -926,7 +1296,7 @@ export const REGISTRY_ABI = [
         "internalType": "uint256"
       },
       {
-        "name": "pgpPublicKey",
+        "name": "key",
         "type": "bytes",
         "internalType": "bytes"
       },
@@ -936,7 +1306,7 @@ export const REGISTRY_ABI = [
         "internalType": "uint256"
       },
       {
-        "name": "signature",
+        "name": "permission",
         "type": "bytes",
         "internalType": "bytes"
       }
@@ -973,22 +1343,16 @@ export const REGISTRY_ABI = [
         "internalType": "bytes"
       },
       {
+        "name": "payload",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
         "name": "messageVersion",
         "type": "uint8",
         "indexed": false,
         "internalType": "uint8"
-      },
-      {
-        "name": "keyPtr",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      },
-      {
-        "name": "sigPtr",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
       },
       {
         "name": "submitter",
@@ -1022,13 +1386,13 @@ export const REGISTRY_ABI = [
         "internalType": "uint256"
       },
       {
-        "name": "oldKeyPtr",
+        "name": "oldPayload",
         "type": "address",
         "indexed": false,
         "internalType": "address"
       },
       {
-        "name": "newKeyPtr",
+        "name": "newPayload",
         "type": "address",
         "indexed": false,
         "internalType": "address"
@@ -1078,10 +1442,22 @@ export const REGISTRY_ABI = [
         "internalType": "uint256"
       },
       {
-        "name": "kind",
+        "name": "kindHash",
         "type": "bytes32",
         "indexed": true,
         "internalType": "bytes32"
+      },
+      {
+        "name": "kind",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      },
+      {
+        "name": "value",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
       },
       {
         "name": "submitter",
@@ -1115,6 +1491,18 @@ export const REGISTRY_ABI = [
         "internalType": "uint256"
       },
       {
+        "name": "reason",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      },
+      {
+        "name": "replacedBy",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
         "name": "submitter",
         "type": "address",
         "indexed": false,
@@ -1126,11 +1514,22 @@ export const REGISTRY_ABI = [
   {
     "type": "error",
     "name": "AlreadyRevoked",
+    "inputs": [
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "BadArmorChecksum",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "AuthorizationExpired",
+    "name": "BadBase64",
     "inputs": []
   },
   {
@@ -1141,11 +1540,17 @@ export const REGISTRY_ABI = [
   {
     "type": "error",
     "name": "DuplicateActiveFingerprint",
-    "inputs": []
+    "inputs": [
+      {
+        "name": "fingerprint",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ]
   },
   {
     "type": "error",
-    "name": "EmptyPublicKey",
+    "name": "EmptyKey",
     "inputs": []
   },
   {
@@ -1156,16 +1561,55 @@ export const REGISTRY_ABI = [
   {
     "type": "error",
     "name": "IndexOutOfBounds",
-    "inputs": []
+    "inputs": [
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "count",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
-    "name": "InvalidAuthorization",
-    "inputs": []
+    "name": "InvalidFingerprint",
+    "inputs": [
+      {
+        "name": "fingerprint",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ]
   },
   {
     "type": "error",
     "name": "InvalidFingerprintLength",
+    "inputs": [
+      {
+        "name": "length",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidKindName",
+    "inputs": [
+      {
+        "name": "kind",
+        "type": "string",
+        "internalType": "string"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidPermission",
     "inputs": []
   },
   {
@@ -1175,17 +1619,125 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "error",
-    "name": "PublicKeyTooLarge",
+    "name": "KeyTooLarge",
+    "inputs": [
+      {
+        "name": "size",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "max",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NotAKey",
+    "inputs": [
+      {
+        "name": "firstByte",
+        "type": "bytes1",
+        "internalType": "bytes1"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NotASignature",
+    "inputs": [
+      {
+        "name": "firstByte",
+        "type": "bytes1",
+        "internalType": "bytes1"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NotArmored",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "PayloadTooLarge",
+    "inputs": [
+      {
+        "name": "size",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "max",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "PermissionExpired",
+    "inputs": [
+      {
+        "name": "deadline",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
     "name": "RecordTooLarge",
-    "inputs": []
+    "inputs": [
+      {
+        "name": "size",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "max",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
     "name": "SignatureTooLarge",
+    "inputs": [
+      {
+        "name": "size",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "max",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "TooManyClaims",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnknownRevokeReason",
+    "inputs": [
+      {
+        "name": "reason",
+        "type": "string",
+        "internalType": "string"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "UnsupportedHeader",
     "inputs": []
   }
 ] as const

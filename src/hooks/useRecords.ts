@@ -1,32 +1,36 @@
-import { useReadContracts } from 'wagmi'
+import { useReadContract } from 'wagmi'
 import { useQuery } from '@tanstack/react-query'
 import { REGISTRY_ABI, getRegistry } from '../core/contract'
 import { chainFor } from '../provider'
 import { useIdentityKitConfig } from '../context'
-import { IDENTITY_KINDS, decodeRecord, parseRecord, recordKind, type ParsedRecord } from '../core/records'
+import { IDENTITY_KINDS, parseRecord, pickRecords, type ParsedRecord } from '../core/records'
 
 /**
- * The records on one claim, for the kinds given (default: the kinds an identity page shows),
- * read in one multicall and parsed. Kinds with no record are left out.
+ * The records on one claim, read with `recordsOf` and parsed. `kinds` picks and orders them
+ * (default: the kinds an identity page shows); `null` shows every record.
  */
-export function useRecords(address: string | undefined | null, index: number | undefined | null, kinds: readonly string[] = IDENTITY_KINDS, armoredKey?: string | null) {
+export function useRecords(address: string | undefined | null, index: number | undefined | null, kinds: readonly string[] | null = IDENTITY_KINDS, armoredKey?: string | null) {
   const config = useIdentityKitConfig()
   const registry = getRegistry(config.network, config.registryAddress)
   const chain = chainFor(config.network)
   const owner = address as `0x${string}` | undefined
   const enabled = !!owner && index !== undefined && index !== null
 
-  const contracts = enabled
-    ? kinds.map(kind => ({ address: registry.address, abi: REGISTRY_ABI, functionName: 'record' as const, args: [owner!, BigInt(index!), recordKind(kind)] as const, chainId: chain.id }))
-    : []
-  const { data: raw, isLoading: readLoading, refetch } = useReadContracts({ contracts, query: { enabled: contracts.length > 0 } })
+  const { data: raw, isLoading: readLoading, refetch } = useReadContract({
+    address: registry.address,
+    abi: REGISTRY_ABI,
+    functionName: 'recordsOf',
+    args: enabled ? [owner!, BigInt(index!)] : undefined,
+    chainId: chain.id,
+    query: { enabled },
+  })
 
-  const texts = (raw ?? []).map(r => (r.status === 'success' ? decodeRecord(r.result as `0x${string}`) : ''))
+  const picked = raw ? pickRecords(raw[0], raw[1], kinds) : []
   const { data: records, isLoading: parseLoading } = useQuery({
-    queryKey: ['records', config.network, registry.address, address, index, kinds.join(','), texts.join(' '), armoredKey ?? ''],
+    queryKey: ['records', config.network, registry.address, address, index, kinds?.join(',') ?? '*', JSON.stringify(picked), armoredKey ?? ''],
     queryFn: async (): Promise<ParsedRecord[]> => {
       const out: ParsedRecord[] = []
-      for (let i = 0; i < kinds.length; i++) if (texts[i]) out.push(await parseRecord(kinds[i], texts[i], { armoredKey: armoredKey ?? undefined }))
+      for (const r of picked) out.push(await parseRecord(r.kind, r.text, { armoredKey: armoredKey ?? undefined }))
       return out
     },
     enabled: enabled && raw !== undefined,

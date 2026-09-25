@@ -43,8 +43,8 @@ function algorithmName(keyOrSubkey: any): string {
 
 /**
  * A key or signature as it arrives: armored text, raw bytes, or the `0x…` hex a contract call
- * returns. The lean format (registry v3) stores raw bytes; older claims and pasted gpg output are
- * armored text. Callers never have to know which.
+ * returns. The registry stores raw bytes (or a clearsigned message as text); pasted gpg output is
+ * armored. Callers never have to know which.
  */
 export type PgpInput = string | Uint8Array
 
@@ -219,9 +219,8 @@ export async function verifyClearsigned({ armoredKey, clearsigned }: { armoredKe
 }
 
 /**
- * A detached signature over the claim statement for `address` (the lean format stores only the
- * signature; the text is rebuilt). gpg's clearsign can sign a trailing line break, so both forms
- * are tried; the standard is none (`printf '%s'`).
+ * A detached signature over the claim statement for `address`, exactly as `printf '%s'` gives it
+ * (no trailing line break): the only form the registry's `clearsigned()` view can show to gpg.
  */
 export async function verifyStatementSignature({ key, signature, address }: { key: PgpInput; signature: PgpInput; address: string }): Promise<{ verified: boolean; reason?: string; text: string }> {
   const text = statementText(address)
@@ -229,14 +228,8 @@ export async function verifyStatementSignature({ key, signature, address }: { ke
     const openpgp = await import('openpgp')
     const publicKey = await readKeyAny(openpgp, key)
     const { packets } = await readSignatureAny(openpgp, signature)
-    let lastError: unknown = null
-    for (const candidate of [text, `${text}\n`]) {
-      try {
-        if (await verifySignedText(openpgp, publicKey, packets, candidate)) return { verified: true, text }
-        return { verified: false, reason: 'Message is not signed by this key', text }
-      } catch (err) { lastError = err }
-    }
-    return { verified: false, reason: lastError instanceof Error ? lastError.message : 'Verification failed', text }
+    if (await verifySignedText(openpgp, publicKey, packets, text)) return { verified: true, text }
+    return { verified: false, reason: 'Message is not signed by this key', text }
   } catch (err) {
     return { verified: false, reason: err instanceof Error ? err.message : 'Verification failed', text }
   }
@@ -318,8 +311,7 @@ export async function verifyAttestation({
       return { verified: false, reason: 'Key fingerprint mismatch', kind: 'bad-signature' }
     }
 
-    // Either a clearsigned message (older claims, pasted gpg output) or a detached signature over
-    // the rebuilt statement (the lean format).
+    // A detached signature over the rebuilt statement, or a clearsigned message stored as-is.
     let sig: Awaited<ReturnType<typeof readSignatureAny>>
     try { sig = await readSignatureAny(openpgp, pgpSignature) }
     catch { return { verified: false, reason: 'Unreadable signature', kind: 'bad-signature' } }
@@ -337,9 +329,9 @@ export async function verifyAttestation({
       return { verified: false, reason: v.reason, kind: 'bad-signature', signingKey: life.signingKey }
     }
 
-    const signedText = v.text
-    if (!signedText.toLowerCase().includes(ethAddress.toLowerCase())) {
-      return { verified: false, reason: 'Signed message does not contain ETH address', kind: 'bad-signature', signingKey: life.signingKey }
+    // The signed text must be the statement for this address (a clearsigned message may end in a line break).
+    if (v.text.trim().toLowerCase() !== statementText(ethAddress).toLowerCase()) {
+      return { verified: false, reason: 'Signed text is not the statement for this address', kind: 'bad-signature', signingKey: life.signingKey }
     }
 
     return { verified: true, kind: 'verified', signingKey: life.signingKey, expiresAt: life.expiresAt }
@@ -351,7 +343,7 @@ export async function verifyAttestation({
 export interface StrippedKey {
   /** Armored public key containing only the non-email user IDs. */
   armored: string
-  /** The same key as raw bytes (the lean format). */
+  /** The same key as raw bytes. */
   binary: Uint8Array
   /** User IDs kept (no `@`). */
   kept: string[]
@@ -411,7 +403,7 @@ export interface LeanKey {
 }
 
 /**
- * The key as a claim stores it (lean format): raw bytes; email user IDs left out unless
+ * The key as a claim stores it: raw bytes; email user IDs left out unless
  * `includeEmail`; authentication-only subkeys (SSH) left out, since nobody fetches those from a
  * keyserver. Everything else stays: the primary key, the remaining user IDs, every signing and
  * encryption subkey, and every revocation (so a revoked name or subkey reads as revoked). Like
@@ -458,7 +450,7 @@ export async function leanKey(input: PgpInput, { includeEmail = false }: { inclu
   }
 }
 
-/** The signature as a claim stores it (lean format): the raw signature packet, from a detached signature or a clearsigned message. */
+/** The signature as a claim stores it: the raw signature packet, from a detached signature or a clearsigned message. */
 export async function leanSignature(input: PgpInput): Promise<Uint8Array | null> {
   try {
     const openpgp = await import('openpgp')
@@ -470,10 +462,33 @@ export async function leanSignature(input: PgpInput): Promise<Uint8Array | null>
 }
 
 /**
- * A stored payload as armored text, whatever form it was stored in: older claims already are
- * text; lean claims (raw bytes) are armored here, so displays and copy buttons keep working and
- * the text is what `gpg --import` / `gpg --verify` expect. Accepts the `0x…` hex a contract call
- * returns. Null if it isn't OpenPGP data.
+ * What to store as a claim's signature. A detached signature is stored as its own raw bytes
+ * (message version 1). A clearsigned message is reduced to its signature when that covers the
+ * statement exactly; otherwise (e.g. made with `echo`, which signs a trailing line break) the
+ * whole message is kept as text (version 0), so gpg can still verify what the registry returns.
+ */
+export async function claimSignature({ signature, key, address }: { signature: PgpInput; key: PgpInput; address: string }): Promise<{ signature: Uint8Array | string; messageVersion: 0 | 1 } | null> {
+  try {
+    const openpgp = await import('openpgp')
+    const sig = await readSignatureAny(openpgp, signature)
+    if (sig.text === null) {
+      // Keep the signature's own bytes (gpg writes old-style packet headers; re-writing would change them).
+      const v = normalizeInput(signature)
+      const raw = typeof v === 'string' ? (await openpgp.unarmor(v)).data as Uint8Array : v
+      return { signature: raw, messageVersion: 1 }
+    }
+    const packet: Uint8Array = sig.signature.write()
+    if ((await verifyStatementSignature({ key, signature: packet, address })).verified) return { signature: packet, messageVersion: 1 }
+    return { signature: normalizeInput(signature) as string, messageVersion: 0 }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * A stored key or signature as armored text, for display, copy buttons, and `gpg --import`.
+ * A clearsigned message comes back as stored. Accepts the `0x…` hex a contract call returns.
+ * Null if it isn't OpenPGP data.
  */
 export async function payloadText(input: PgpInput, kind: 'key' | 'signature'): Promise<string | null> {
   try {

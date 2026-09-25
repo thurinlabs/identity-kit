@@ -1,5 +1,5 @@
 export interface Attestation {
-  /** Position in the owner's attestation history. */
+  /** Position in the owner's claim history. */
   index: number
   /** Lowercase hex fingerprint, no 0x (40 chars for v4 keys, 64 for v6). */
   fingerprint: string
@@ -8,11 +8,17 @@ export interface Attestation {
   revoked: boolean
   /** Unix seconds, or null while active. */
   revokedAt: number | null
-  /** Format of the clearsigned message (1 = "I control the Ethereum address: <address>"). */
+  /** 'active', 'revoked', or 'replaced' (revoked by a reattest). */
+  state: 'active' | 'revoked' | 'replaced'
+  /** The claim that replaced this one, when `state` is 'replaced'. */
+  replacedBy: number | null
+  /** The owner's revoke reason: '', 'compromised', 'retired', 'superseded', or 'other'. */
+  revokeReason: string
+  /** 1 = detached signature over the statement; 0 = a clearsigned message stored as submitted. */
   messageVersion: number
-  /** The clearsigned message stored on-chain (null only if the payload read failed). */
+  /** The signature as armored text, or the clearsigned message (null only if the read failed). */
   pgpSignature: string | null
-  /** The armored public key stored on-chain (null only if the payload read failed). */
+  /** The armored public key (null only if the read failed). */
   pgpPublicKey: string | null
   verification: PGPVerification | null
 }

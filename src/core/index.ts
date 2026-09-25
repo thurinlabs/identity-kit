@@ -6,7 +6,7 @@
  */
 export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref, FARCASTER_HUB } from './proofs'
 export type { ProofOptions } from './proofs'
-export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID, verifyStatementSignature, statementText, leanKey, leanSignature, payloadText } from './pgp'
+export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID, verifyStatementSignature, statementText, leanKey, leanSignature, claimSignature, payloadText } from './pgp'
 export type { StrippedKey, LeanKey, PgpInput } from './pgp'
 export { fetchEFPGraph } from './efp'
 export {
@@ -15,11 +15,11 @@ export {
 export {
   EIP712_NAME, EIP712_VERSION, AUTHORIZATION_TYPES, registryDomain,
   attestTypedData, reattestTypedData, updateKeyTypedData, revokeTypedData, setRecordTypedData,
-  authorizationDigest, recordKind,
+  authorizationDigest, recordKind, REVOKE_REASONS,
 } from './authorization'
 export type {
   AuthorizationAction, AttestAuthorization, ReattestAuthorization, UpdateKeyAuthorization,
-  RevokeAuthorization, SetRecordAuthorization,
+  RevokeAuthorization, SetRecordAuthorization, RevokeReason,
 } from './authorization'
 export type {
   ThurinIdentity, Attestation, PGPVerification, ClaimCheckKind, PGPKeyInfo, SubkeyInfo, Notation, Proof,
@@ -27,7 +27,7 @@ export type {
 } from './types'
 export { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry, isNetworkName, chainFor } from './contract'
 export {
-  MAX_RECORD_BYTES, KNOWN_KINDS, IDENTITY_KINDS, kindName, encodeRecord, decodeRecord,
+  MAX_RECORD_BYTES, MAX_KIND_BYTES, KNOWN_KINDS, IDENTITY_KINDS, kindName, checkKindName, checkRecordValue, pickRecords,
   parsePointer, addPointer, renderPointer, parseRecord, fetchRecords,
 } from './records'
 export type { KnownKind, ParsedRecord, RecordData, PointerEntry, PointerRecord, RecordReader } from './records'

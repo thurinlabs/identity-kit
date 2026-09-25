@@ -87,30 +87,23 @@ export function expiresSoonText(soon: { days: number; at: string }, formatDate: 
 
 export type ClaimFate =
   | { state: 'active' }
-  | { state: 'revoked'; at: number }
+  | { state: 'revoked'; at: number; reason?: string }
   | { state: 'replaced'; at: number; by: number }
 
-/**
- * Active, revoked, or replaced, for each of one owner's claims (keyed by index). `reattest`
- * revokes and attests in one transaction, so a claim revoked at the very second a newer claim
- * of the same owner was created counts as replaced by it. The contract has no "superseded"
- * event; this reads the same fact from the stored timestamps.
- */
-export function claimFates(claims: Pick<Attestation, 'index' | 'createdAt' | 'revokedAt'>[]): Map<number, ClaimFate> {
+/** Active, revoked (with the owner's reason), or replaced, for each of one owner's claims (keyed by index). */
+export function claimFates(claims: Pick<Attestation, 'index' | 'revokedAt' | 'state' | 'replacedBy' | 'revokeReason'>[]): Map<number, ClaimFate> {
   const out = new Map<number, ClaimFate>()
   for (const c of claims) {
-    if (!c.revokedAt) { out.set(c.index, { state: 'active' }); continue }
-    const successor = claims
-      .filter(n => n.index > c.index && n.createdAt === c.revokedAt)
-      .sort((a, b) => a.index - b.index)[0]
-    out.set(c.index, successor ? { state: 'replaced', at: c.revokedAt, by: successor.index } : { state: 'revoked', at: c.revokedAt })
+    if (c.state === 'active' || !c.revokedAt) out.set(c.index, { state: 'active' })
+    else if (c.state === 'replaced' && c.replacedBy !== null) out.set(c.index, { state: 'replaced', at: c.revokedAt, by: c.replacedBy })
+    else out.set(c.index, { state: 'revoked', at: c.revokedAt, ...(c.revokeReason ? { reason: c.revokeReason } : {}) })
   }
   return out
 }
 
-/** "Revoked by its owner on Oct 3, 2026." / "Replaced by claim #2 on Oct 3, 2026." */
+/** "Revoked by its owner on Oct 3, 2026 (compromised)." / "Replaced by claim #2 on Oct 3, 2026." */
 export function claimFateText(fate: ClaimFate, formatDate: (seconds: number) => string = s => formatClaimDate(s)): string | null {
-  if (fate.state === 'revoked') return `Revoked by its owner on ${formatDate(fate.at)}.`
+  if (fate.state === 'revoked') return `Revoked by its owner on ${formatDate(fate.at)}${fate.reason ? ` (${fate.reason})` : ''}.`
   if (fate.state === 'replaced') return `Replaced by claim #${fate.by} on ${formatDate(fate.at)}.`
   return null
 }

@@ -8,9 +8,8 @@ import { useIdentityKitConfig } from '../context'
 import type { Attestation } from '../core/types'
 
 /**
- * On-chain attestations for an address, read straight from the v2 registry:
- * `attestationsOf` for the history, `getPayload` for each stored signature + key.
- * No event logs, so any RPC works. Each claim is verified off-chain.
+ * An address's claims, read from the registry: `claimsOf` for the history, then `keyBytes` and
+ * `signatureBytes` for each claim. Plain eth_call, so any RPC works. Each claim is verified here.
  */
 export function useAttestations(address: string | undefined | null) {
   const config = useIdentityKitConfig()
@@ -21,7 +20,7 @@ export function useAttestations(address: string | undefined | null) {
   const { data: rows, isLoading: rowsLoading, isFetched: rowsFetched, error: rowsError, refetch: refetchRows } = useReadContract({
     address: registry.address,
     abi: REGISTRY_ABI,
-    functionName: 'attestationsOf',
+    functionName: 'claimsOf',
     args: owner ? [owner] : undefined,
     chainId: chain.id,
     query: { enabled: !!owner },
@@ -30,13 +29,13 @@ export function useAttestations(address: string | undefined | null) {
   const count = rows?.length ?? 0
 
   const contracts = owner && rows
-    ? rows.map((_, i) => ({
+    ? rows.flatMap((_, i) => (['keyBytes', 'signatureBytes'] as const).map(functionName => ({
         address: registry.address,
         abi: REGISTRY_ABI,
-        functionName: 'getPayload' as const,
+        functionName,
         args: [owner, BigInt(i)] as const,
         chainId: chain.id,
-      }))
+      })))
     : []
 
   const { data: payloads, isLoading: payloadsLoading, error: payloadsError, refetch: refetchPayloads } = useReadContracts({
@@ -44,7 +43,7 @@ export function useAttestations(address: string | undefined | null) {
     query: { enabled: contracts.length > 0 },
   })
 
-  const payloadsReady = count === 0 || (payloads !== undefined && payloads.length === count)
+  const payloadsReady = count === 0 || (payloads !== undefined && payloads.length === count * 2)
 
   const { data: claims, isLoading: verifyLoading } = useQuery({
     queryKey: ['attestations', config.network, registry.address, address, count, payloadsReady],
@@ -54,15 +53,10 @@ export function useAttestations(address: string | undefined | null) {
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i]
-        const payload = payloads?.[i]
-        let pgpSignature: string | null = null
-        let pgpPublicKey: string | null = null
-        if (payload && payload.status === 'success') {
-          const [sigHex, keyHex] = payload.result as readonly [`0x${string}`, `0x${string}`]
-          // Older claims store armored text, lean claims raw bytes; both come back as armored text.
-          pgpSignature = await payloadText(sigHex, 'signature')
-          pgpPublicKey = await payloadText(keyHex, 'key')
-        }
+        const keyRead = payloads?.[2 * i]
+        const sigRead = payloads?.[2 * i + 1]
+        const pgpPublicKey = keyRead?.status === 'success' ? await payloadText(keyRead.result as `0x${string}`, 'key') : null
+        const pgpSignature = sigRead?.status === 'success' ? await payloadText(sigRead.result as `0x${string}`, 'signature') : null
 
         const fingerprint = bytesToFingerprint(row.fingerprint)
         const verification = pgpPublicKey && pgpSignature
@@ -70,12 +64,16 @@ export function useAttestations(address: string | undefined | null) {
           : null
 
         const revokedAt = Number(row.revokedAt)
+        const state = row.state as Attestation['state']
         results.push({
           index: i,
           fingerprint,
           createdAt: Number(row.createdAt),
           revoked: revokedAt !== 0,
           revokedAt: revokedAt === 0 ? null : revokedAt,
+          state,
+          replacedBy: state === 'replaced' ? Number(row.replacedBy) : null,
+          revokeReason: row.revokeReason,
           messageVersion: Number(row.messageVersion),
           pgpSignature,
           pgpPublicKey,
@@ -92,9 +90,8 @@ export function useAttestations(address: string | undefined | null) {
   const isLoading = rowsLoading || (!!owner && !rowsFetched) || payloadsLoading || verifyLoading || (!!owner && rows !== undefined && !payloadsReady)
 
   const activeClaims = (claims || []).filter((c) => !c.revoked)
-  // The current identity is the latest claim that is both active and has a
-  // verified signature binding the key to this address. A claim whose signature
-  // has not verified must not surface the key's proofs or user data.
+  // The current identity is the latest claim that is active and whose signature verified. A claim
+  // that hasn't verified must not surface the key's proofs or user data.
   const verifiedClaims = activeClaims.filter((c) => c.verification?.verified)
   const currentFingerprint = verifiedClaims.length > 0
     ? verifiedClaims[verifiedClaims.length - 1].fingerprint

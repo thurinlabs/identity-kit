@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const fx = (f: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', f), 'utf8')
-import { kindName, recordKind, encodeRecord, decodeRecord, parseRecord, fetchRecords, addPointer, IDENTITY_KINDS, KNOWN_KINDS } from '../records'
+import { kindName, checkKindName, checkRecordValue, recordKind, pickRecords, parseRecord, fetchRecords, addPointer, IDENTITY_KINDS, KNOWN_KINDS } from '../records'
 
 const BEN = '6E0053911942A889426C1866E34D9266098F7FE7'
 const ZK = '0zk1' + 'qyqxpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn5'   // bech32 charset, real ones are 127 chars
@@ -16,10 +16,13 @@ describe('record kinds and encoding', () => {
     expect(kindName('com.example.thing')).toBe('com.example.thing')
     expect(recordKind('thurin.canary')).toMatch(/^0x[0-9a-f]{64}$/)
   })
-  it('round-trips text and enforces the 1 KB slot', () => {
-    expect(decodeRecord(encodeRecord('hello'))).toBe('hello')
-    expect(decodeRecord('0x')).toBe('')
-    expect(() => encodeRecord('x'.repeat(1025))).toThrow(/1024/)
+  it('checks names and values the way the registry does', () => {
+    expect(checkKindName('canary')).toBe('thurin.canary')
+    expect(checkKindName('com.example.thing')).toBe('com.example.thing')
+    expect(() => checkKindName('Bad Kind')).toThrow(/a-z/)
+    expect(() => checkKindName('k'.repeat(25))).toThrow(/31/)          // 'thurin.' + 25 = 32
+    expect(checkRecordValue('hello')).toBe('hello')
+    expect(() => checkRecordValue('x'.repeat(1025))).toThrow(/1024/)
   })
   it('keeps pointer out of the identity page but in the known list', () => {
     expect(IDENTITY_KINDS).not.toContain('thurin.pointer')
@@ -81,12 +84,16 @@ describe('parseRecord', () => {
 })
 
 describe('fetchRecords', () => {
-  it('reads each kind and skips empty ones', async () => {
-    const seen: string[] = []
-    const client = { readContract: async ({ args }: any) => { seen.push(args[2]); return args[2] === recordKind('thurin.canary') ? encodeRecord('ok as of 2026-09-23') : '0x' } }
-    const out = await fetchRecords(client as any, '0x9302E02e2869e129aC8516fE5eFFd51EA3082c09', [], '0x539C7e1E454296Dc150B95a0acCC05bCa3b33538', 0)
-    expect(seen.length).toBe(IDENTITY_KINDS.length)
-    expect(out.map(r => r.kind)).toEqual(['thurin.canary'])
+  it('reads recordsOf once, keeps identity kinds in display order, skips empty values', async () => {
+    const calls: any[] = []
+    const client = { readContract: async (a: any) => { calls.push(a); return [['com.example.x', 'thurin.canary', 'thurin.security', 'thurin.railgun'], ['x', 'ok as of 2026-09-23', 'mailto:a@example.com', '']] } }
+    const out = await fetchRecords(client as any, '0x4f2d70799cAAD651C7c564426AA74A842c1331B6', [], '0x539C7e1E454296Dc150B95a0acCC05bCa3b33538', 0)
+    expect(calls).toHaveLength(1)
+    expect(calls[0].functionName).toBe('recordsOf')
+    expect(out.map(r => r.kind)).toEqual(['thurin.security', 'thurin.canary'])
+  })
+  it('pickRecords with null keeps every record in first-set order', () => {
+    expect(pickRecords(['b.x', 'thurin.canary'], ['1', '2'], null).map(r => r.kind)).toEqual(['b.x', 'thurin.canary'])
   })
 })
 

@@ -11,7 +11,7 @@ import type { PGPKeyInfo, ProofResult } from '../core/types'
  * never carry the published (non-email) identity that holds the notations.
  *
  * @param fingerprint the attested fingerprint (proofs must name it)
- * @param armoredKey  the attestation's `pgpPublicKey`
+ * @param armoredKey  the claim's `pgpPublicKey`
  */
 export function usePGPProofs(fingerprint: string | undefined | null, armoredKey: string | undefined | null) {
   const config = useIdentityKitConfig()

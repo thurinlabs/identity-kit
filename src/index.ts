@@ -18,7 +18,7 @@ export { useSafeAvatar } from './hooks/useSafeAvatar'
 // Core utilities
 export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref, FARCASTER_HUB } from './core/proofs'
 export type { ProofOptions } from './core/proofs'
-export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID, verifyStatementSignature, statementText, leanKey, leanSignature, payloadText } from './core/pgp'
+export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID, verifyStatementSignature, statementText, leanKey, leanSignature, claimSignature, payloadText } from './core/pgp'
 export type { StrippedKey, LeanKey, PgpInput } from './core/pgp'
 export { fetchEFPGraph } from './core/efp'
 export { identityErrorKind, needsRpcProbe, IDENTITY_ERROR_TEXT } from './core/identityError'
@@ -33,11 +33,11 @@ export {
 export {
   EIP712_NAME, EIP712_VERSION, AUTHORIZATION_TYPES, registryDomain,
   attestTypedData, reattestTypedData, updateKeyTypedData, revokeTypedData, setRecordTypedData,
-  authorizationDigest, recordKind,
+  authorizationDigest, recordKind, REVOKE_REASONS,
 } from './core/authorization'
 export type {
   AuthorizationAction, AttestAuthorization, ReattestAuthorization, UpdateKeyAuthorization,
-  RevokeAuthorization, SetRecordAuthorization,
+  RevokeAuthorization, SetRecordAuthorization, RevokeReason,
 } from './core/authorization'
 
 // Types
@@ -59,7 +59,7 @@ export type {
 // Constants
 export { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry, isNetworkName } from './core/contract'
 export {
-  MAX_RECORD_BYTES, KNOWN_KINDS, IDENTITY_KINDS, kindName, encodeRecord, decodeRecord,
+  MAX_RECORD_BYTES, MAX_KIND_BYTES, KNOWN_KINDS, IDENTITY_KINDS, kindName, checkKindName, checkRecordValue, pickRecords,
   parsePointer, addPointer, renderPointer, parseRecord, fetchRecords,
 } from './core/records'
 export type { KnownKind, ParsedRecord, RecordData, PointerEntry, PointerRecord, RecordReader } from './core/records'

@@ -74,12 +74,12 @@ Wrap your app (or just the part using identity-kit) in `IdentityKitProvider`. If
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `rpcUrl` | `string` | publicnode | Ethereum RPC endpoint. Any RPC works — v2 needs only `eth_call` |
+| `rpcUrl` | `string` | publicnode | Ethereum RPC endpoint. Any RPC works: reads are plain `eth_call` |
 | `farcasterHub` | `string` | Hypersnap public node | A Farcaster node's HTTP API for Farcaster proofs. The default, Quilibrium's `haatz.quilibrium.com`, needs no key; it sees the visitor's IP and which account was checked (1.3.7) |
 | `neynarApiKey` | `string` | — | Optional: read Farcaster through Neynar's hub instead. Not needed since 1.3.7 |
 | `baseUrl` | `string` | `https://thurin.id` | Base URL for "View on Thurin" links |
 | `network` | `'mainnet' \| 'sepolia' \| 'local'` | `'mainnet'` | Which chain to read the PGPRegistry on (`local` = a running anvil) |
-| `registryAddress` | `string` | v2 address | Override the registry contract address |
+| `registryAddress` | `string` | registry address | Override the registry contract address |
 
 ## Hooks
 
@@ -103,13 +103,16 @@ When the identity can't be shown, `error` is a plain `Error` safe to display and
 
 ### useAttestations
 
-On-chain attestation data from the PGPRegistry v2 contract — the owner's history plus the stored signature and key for each claim, read with plain contract calls (no event logs), each verified off-chain.
+An address's claims from the PGPRegistry: the history (`claimsOf`) plus each claim's stored key and signature, read with plain contract calls (no event logs), each verified here.
 
 ```tsx
 const { claims, totalClaims, activeClaims, currentFingerprint, isLoading } =
   useAttestations('0xd8dA...')
-// claims[].{ index, fingerprint, createdAt, revoked, revokedAt, messageVersion, pgpSignature, pgpPublicKey, verification }
+// claims[].{ index, fingerprint, createdAt, revoked, revokedAt, state, replacedBy, revokeReason,
+//            messageVersion, pgpSignature, pgpPublicKey, verification }
 ```
+
+`state` is `'active'`, `'revoked'`, or `'replaced'` (revoked by a reattest; `replacedBy` is the new claim's index). `pgpPublicKey` and `pgpSignature` come back as armored text, ready for display or `gpg --import`.
 
 ### useEFPGraph
 
@@ -237,21 +240,23 @@ const graph = await fetchEFPGraph(address)
 ```ts
 import { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry } from '@thurinlabs/identity-kit'
 
-getRegistry('sepolia') // → { chainId: 11155111, address, deployBlock, explorerUrl, defaultRpcUrl }
+getRegistry('sepolia') // → { chainId: 11155111, address, explorerUrl, defaultRpcUrl }
 ```
 
-`REGISTRY_ABI` is the complete v2 ABI (reads and writes), so apps that publish claims use the same one. The v2 registry is deployed with CREATE2 and has the same address on every network.
+`REGISTRY_ABI` is the complete ABI (reads and writes), so apps that publish claims use the same one. The registry is deployed with CREATE2 and has the same address on every network.
 
 ### Records
 
 ```ts
-import { fetchRecords, parseRecord, encodeRecord, kindName, IDENTITY_KINDS, KNOWN_KINDS } from '@thurinlabs/identity-kit/core'
+import { fetchRecords, parseRecord, checkKindName, checkRecordValue, IDENTITY_KINDS, KNOWN_KINDS } from '@thurinlabs/identity-kit/core'
 
-const records = await fetchRecords(publicClient, REGISTRY_ADDRESS, REGISTRY_ABI, owner, claimIndex)   // ParsedRecord[] for IDENTITY_KINDS
+const records = await fetchRecords(publicClient, REGISTRY_ADDRESS, REGISTRY_ABI, owner, claimIndex)         // IDENTITY_KINDS, in display order
+const every = await fetchRecords(publicClient, REGISTRY_ADDRESS, REGISTRY_ABI, owner, claimIndex, null)     // every record on the claim
 const one = await parseRecord('thurin.canary', text)   // { valid, reason?, data: { type: 'canary', date, statement, clearsigned } }
+// write: setRecord(index, checkKindName('canary'), checkRecordValue(text)); an empty value clears it
 ```
 
-A record is one value per claim per kind, up to 1 KB, set only by the owner. `parseRecord` never throws: a value that does not fit its kind comes back with `valid: false` and a reason. Kinds Thurin defines: `thurin.railgun`, `thurin.security`, `thurin.successor`, `thurin.affiliation`, `thurin.canary`, `thurin.private`, `thurin.disclosure` (shown on identity pages) and `thurin.pointer` (the Thurin Labs release list). Anyone can use reverse-dot names of their own.
+A record is a named text value on a claim, up to 1 KB, set only by the owner; `recordsOf(owner, index)` lists them. Names are `a-z 0-9 - .`, up to 31 bytes; a name without a dot gets `thurin.` in front. `parseRecord` never throws: a value that does not fit its kind comes back with `valid: false` and a reason. Kinds Thurin defines: `thurin.railgun`, `thurin.security`, `thurin.successor`, `thurin.affiliation`, `thurin.canary`, `thurin.private`, `thurin.disclosure` (shown on identity pages) and `thurin.pointer` (the Thurin Labs release list). Anyone can use reverse-dot names of their own.
 
 ### ENS record (`id.thurin`)
 
@@ -277,14 +282,14 @@ avatarUrl('https://example.com/me.png')     // null: the owner's server would se
 
 ### Fingerprints and key IDs
 
-The v2 registry takes raw fingerprint bytes and indexes by their hash and by long key ID:
+The registry takes raw fingerprint bytes and indexes them by long key ID:
 
 ```ts
 import { fingerprintToBytes, bytesToFingerprint, fingerprintHash, keyIdOf, keyIdToBytes } from '@thurinlabs/identity-kit'
 
 fingerprintToBytes('6E00 5391 … 7FE7')  // → '0x6e0053911942a889426c1866e34d9266098f7fe7' (attest / reattest arg)
 bytesToFingerprint('0x6e00…7fe7')       // → '6e0053911942a889426c1866e34d9266098f7fe7'
-fingerprintHash(fp)                      // → keccak256 of the raw bytes (addressesFor arg)
+fingerprintHash(fp)                      // → keccak256 of the raw bytes (the indexed fingerprintHash in events)
 keyIdOf(fp)                              // → '0xe34d9266098f7fe7' (fingerprintsForKeyId arg; v4 = last 8 bytes, v6 = first 8, per RFC 9580)
 ```
 
@@ -298,13 +303,13 @@ import { signTypedData } from '@wagmi/core'
 
 const nonce = await readContract({ ..., functionName: 'nonces', args: [owner] })
 const typedData = attestTypedData(chainId, registryAddress, {
-  owner, fingerprint, pgpSignature, pgpPublicKey, nonce, deadline: BigInt(Math.floor(Date.now() / 1000) + 3600),
+  owner, fingerprint, signature, key, nonce, deadline: BigInt(Math.floor(Date.now() / 1000) + 3600),   // signature, key: 0x… raw bytes
 })
 const signature = await signTypedData(config, typedData)
 // anyone: attestFor(owner, fingerprintBytes, sigBytes, keyBytes, deadline, signature)
 ```
 
-Also `reattestTypedData`, `updateKeyTypedData`, `revokeTypedData`, `setRecordTypedData`, and `recordKind(name)` for the `bytes32 kind` of a record.
+Also `reattestTypedData` (with `keepRecords`), `updateKeyTypedData`, `revokeTypedData` (with a `reason` from `REVOKE_REASONS`), and `setRecordTypedData` (`kind` and `value` as text, exactly as submitted). The contract accepts a plain signature from the owner's key (EIP-7702 accounts included) or, for a contract wallet, EIP-1271.
 
 ## Themes
 
@@ -336,7 +341,7 @@ For static sites, Jekyll blogs, WordPress, or any HTML page — use the standalo
 |-----------|-------------|
 | `data-thurin-card` | ENS name or ETH address to look up (required) |
 | `data-theme` | `thurin`, `dark`, or `light` (default: `thurin`). Change it after render and the card follows, so a page with a theme switch can keep the card in step. |
-| `data-rpc-url` | Optional. Any Ethereum RPC; the card reads the v2 registry with plain calls, so the keyless public default works. |
+| `data-rpc-url` | Optional. Any Ethereum RPC; the card reads the registry with plain calls, so the keyless public default works. |
 | `data-farcaster-hub` | Optional. A Farcaster node for Farcaster proofs; the default is a public node that needs no key. |
 | `data-neynar-key` | Optional. Read Farcaster through Neynar with your key instead (not needed since 1.3.7). |
 | `data-base-url` | Optional. Where the card's "View on Thurin" link points (default `https://thurin.id`). A page served from ENS can pass its own name so the link stays on ENS. |
@@ -357,11 +362,26 @@ The card talks directly to Ethereum and each proof platform — no intermediary,
 
 ## How a claim is verified
 
-`verifyAttestation` checks three things: the stored key's fingerprint is the one on the claim; the stored clearsigned statement was made by that key (or one of its bound signing subkeys) and has not been altered; and the statement names the claim's address. Key validity is judged **now**, the way gpg does it: the key must currently be bound, unrevoked, and unexpired. It is deliberately not judged at the instant the signature was made, which is openpgp.js's default. That default rejects a perfectly good claim whenever the key's newest self-certification postdates the attest signature, which is exactly what happens when you add a proof after attesting and export with `export-minimal` (1.0.3).
+`verifyAttestation` checks three things: the stored key's fingerprint is the one on the claim; the stored signature was made by that key (or one of its bound signing subkeys); and what it signs is exactly the statement for the claim's address, `I control the Ethereum address: <lowercase address>` (a detached signature must cover it with no trailing line break, as `printf '%s'` gives it; a stored clearsigned message may end in one). `claimSignature()` picks what to store from what someone pasted: the bare signature when that verifies, otherwise the whole clearsigned message. Key validity is judged **now**, the way gpg does it: the key must currently be bound, unrevoked, and unexpired. It is deliberately not judged at the instant the signature was made, which is openpgp.js's default. That default rejects a perfectly good claim whenever the key's newest self-certification postdates the attest signature, which is exactly what happens when you add a proof after attesting and export with `export-minimal` (1.0.3).
 
 ## Key algorithms
 
 Any curve openpgp.js can compute is accepted: Ed25519, Cv25519, NIST P-256/384/521, brainpool, RSA (2048 bits and up), and **secp256k1**. DSA and short RSA keys are refused by openpgp.js as too weak; since 1.4.0 such a claim reports `kind: 'unsupported'`. openpgp.js rejects secp256k1 by default because RFC 9580 does not list it; identity-kit removes secp256k1 from `rejectCurves` and leaves the rest of the list alone, since that one entry is a compatibility rule, not a security one (1.3.2; earlier versions cleared the whole set). A secp256k1 PGP key doubles as an Ethereum key (the address is derived from the same public point), so anything that can sign with the PGP key can sign Ethereum transactions: hold such a key if you like, but do not fund its derived address. In Node, openpgp.js needs the `eckey-utils` package for this curve; identity-kit depends on it, so `npm install` brings it in. The browser build needs nothing extra.
+
+## Migrating from 1.x
+
+2.0.0 reads **PGPRegistry v3** (`0x4f2d70799cAAD651C7c564426AA74A842c1331B6`, every network). Claims store the key and signature as raw bytes.
+
+| 1.x | 2.0.0 |
+|-----|-------|
+| `attestationsOf` / `getPayload` | `claimsOf`, `keyBytes`, `signatureBytes` (the hooks do this for you) |
+| `Attestation` | adds `state`, `replacedBy`, `revokeReason`; `messageVersion` 1 = detached, 0 = clearsigned |
+| typed data `pgpSignature`, `pgpPublicKey` | `signature`, `key`; `Reattest` adds `keepRecords`, `Revoke` adds `reason`, `SetRecord` takes text `kind` and `value` |
+| `encodeRecord` / `decodeRecord`, `bytes32` kinds | `checkRecordValue`, `checkKindName`; records are text, listed by `recordsOf` |
+| `fetchRecords(…, kinds)` read one kind at a time | one `recordsOf` read; `kinds: null` returns every record |
+| `RegistryDeployment.deployBlock` | removed |
+| a statement containing the address verified | the signed text must be exactly the statement |
+| — | `claimSignature`, `REVOKE_REASONS`, `pickRecords`, `MAX_KIND_BYTES` |
 
 ## Migrating from 0.9.x
 

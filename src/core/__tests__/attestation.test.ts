@@ -62,6 +62,6 @@ describe('verifyAttestation against real on-chain data', () => {
       fingerprint: '03E53D807CE38C130ED42ECECD3D0D7F0C9E5FB8',
       ethAddress: '0x539c7e1e454296dc150b95a0accc05bca3b33538',
     })
-    expect(result).toMatchObject({ verified: false, reason: 'Signed message does not contain ETH address', kind: 'bad-signature' })
+    expect(result).toMatchObject({ verified: false, reason: 'Signed text is not the statement for this address', kind: 'bad-signature' })
   })
 })

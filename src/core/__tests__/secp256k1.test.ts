@@ -2,12 +2,11 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { parsePgpKey, verifyAttestation } from '../pgp'
+import { parsePgpKey, verifyAttestation, verifyClearsigned } from '../pgp'
 
-// A real secp256k1 OpenPGP key generated on a JavaCard (NeoPGP applet) and its
-// hardware-signed attestation, published by 0xterricola in
-// github.com/0xterricola/keycard-openpgp (experiments/thurin). openpgp.js rejects
-// this curve unless told otherwise; Thurin must verify it like any other key.
+// A real secp256k1 OpenPGP key made on a JavaCard, and a clearsigned message it signed in
+// hardware. openpgp.js rejects this curve unless told otherwise; Thurin must verify it like
+// any other key. (The message's wording isn't Thurin's statement, so it is not a valid claim.)
 const dir = join(__dirname, 'fixtures')
 const key = readFileSync(join(dir, 'secp256k1-key.asc'), 'utf8')
 const attestation = readFileSync(join(dir, 'secp256k1-attestation.asc'), 'utf8')
@@ -23,9 +22,14 @@ describe('secp256k1 keys', () => {
     expect(info!.algorithm).toBe('secp256k1')
   })
 
-  it('verifies a hardware-signed attestation over the curve', async () => {
+  it('verifies a hardware-made signature over the curve', async () => {
+    const result = await verifyClearsigned({ armoredKey: key, clearsigned: attestation })
+    expect(result.verified).toBe(true)
+  })
+
+  it('but not as a claim: the signed text is not the statement', async () => {
     const result = await verifyAttestation({ pgpPublicKey: key, pgpSignature: attestation, fingerprint: FPR, ethAddress: ADDR })
-    expect(result).toMatchObject({ verified: true, kind: 'verified' })
+    expect(result).toMatchObject({ verified: false, reason: 'Signed text is not the statement for this address' })
   })
 
   it('still rejects the attestation for a different address', async () => {

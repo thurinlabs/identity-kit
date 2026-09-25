@@ -9,7 +9,7 @@ export function normalizeFingerprint(input: string): string | null {
   return FINGERPRINT_HEX.test(hex) ? hex : null
 }
 
-/** Fingerprint → the raw `bytes` argument the v2 registry takes (0x-prefixed, 20 or 32 bytes). */
+/** Fingerprint → the raw `bytes` argument the registry takes (0x-prefixed, 20 or 32 bytes). */
 export function fingerprintToBytes(fingerprint: string): Hex {
   const hex = normalizeFingerprint(fingerprint)
   if (!hex) throw new Error(`Invalid PGP fingerprint: ${fingerprint}`)

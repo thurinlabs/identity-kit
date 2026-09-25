@@ -142,17 +142,19 @@ describe('claim wording', () => {
 })
 
 describe('claimFates: revoked vs replaced', () => {
-  it('a claim revoked the second a newer one was created was replaced by it', () => {
+  it('reads the state, replacement, and reason the registry stores', () => {
     const fates = claimFates([
-      { index: 0, createdAt: 100, revokedAt: 150 },   // plain revoke
-      { index: 1, createdAt: 200, revokedAt: 300 },   // reattest → #2
-      { index: 2, createdAt: 300, revokedAt: null },
+      { index: 0, revokedAt: 150, state: 'revoked', replacedBy: null, revokeReason: 'compromised' },
+      { index: 1, revokedAt: 300, state: 'replaced', replacedBy: 2, revokeReason: 'superseded' },
+      { index: 2, revokedAt: null, state: 'active', replacedBy: null, revokeReason: '' },
+      { index: 3, revokedAt: 400, state: 'revoked', replacedBy: null, revokeReason: '' },
     ])
-    expect(fates.get(0)).toEqual({ state: 'revoked', at: 150 })
+    expect(fates.get(0)).toEqual({ state: 'revoked', at: 150, reason: 'compromised' })
     expect(fates.get(1)).toEqual({ state: 'replaced', at: 300, by: 2 })
     expect(fates.get(2)).toEqual({ state: 'active' })
     expect(claimFateText(fates.get(1)!)).toBe(`Replaced by claim #2 on ${formatClaimDate(300)}.`)
-    expect(claimFateText(fates.get(0)!)).toBe(`Revoked by its owner on ${formatClaimDate(150)}.`)
+    expect(claimFateText(fates.get(0)!)).toBe(`Revoked by its owner on ${formatClaimDate(150)} (compromised).`)
+    expect(claimFateText(fates.get(3)!)).toBe(`Revoked by its owner on ${formatClaimDate(400)}.`)
     expect(claimFateText(fates.get(2)!)).toBeNull()
   })
 })

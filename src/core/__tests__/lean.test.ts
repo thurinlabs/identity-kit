@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import * as openpgp from 'openpgp'
-import { leanKey, leanSignature, verifyAttestation, parsePgpKey, statementText, payloadText } from '../pgp'
+import { leanKey, leanSignature, claimSignature, verifyAttestation, parsePgpKey, statementText, payloadText } from '../pgp'
 
 // Fixtures made with gpg from a throwaway key (public data only): an email name, a plain name, a
 // revoked name, and signing / encryption / authentication subkeys. `lean-gpg-key.gpg` is gpg's own
@@ -70,14 +70,26 @@ describe('the lean format verifies (gpg interop)', () => {
     expect(r.verified).toBe(true)
   })
 
-  it('a clearsign made with echo still verifies, whole or reduced to its signature', async () => {
+  it('a clearsign made with echo verifies whole, but not reduced to its signature (it signs a trailing line break)', async () => {
     const lean = await leanKey(text('lean-full-key.asc'))
     const whole = await verifyAttestation({ pgpPublicKey: lean!.binary, pgpSignature: text('lean-echo-clearsign.asc'), fingerprint: FPR, ethAddress: ADDRESS })
     expect(whole.verified).toBe(true)
     const sig = await leanSignature(text('lean-echo-clearsign.asc'))
-    expect(sig!.length).toBeLessThan(130)
     const reduced = await verifyAttestation({ pgpPublicKey: lean!.binary, pgpSignature: sig!, fingerprint: FPR, ethAddress: ADDRESS })
-    expect(reduced.verified).toBe(true) // the trailing-line-break form
+    expect(reduced.verified).toBe(false)
+  })
+
+  it('claimSignature keeps an echo clearsign whole (version 0) and stores a detached signature as its packet (version 1)', async () => {
+    const key = bytes('lean-gpg-key.gpg')
+    const echo = await claimSignature({ signature: text('lean-echo-clearsign.asc'), key, address: ADDRESS })
+    expect(echo!.messageVersion).toBe(0)
+    expect(echo!.signature).toBe(text('lean-echo-clearsign.asc'))
+    const armored = openpgp.armor(openpgp.enums.armor.signature, bytes('lean-detached.sig'))
+    const detached = await claimSignature({ signature: armored, key, address: ADDRESS })
+    expect(detached!.messageVersion).toBe(1)
+    expect(detached!.signature).toEqual(bytes('lean-detached.sig'))   // gpg's exact bytes, old-style header kept
+    const r = await verifyAttestation({ pgpPublicKey: key, pgpSignature: detached!.signature, fingerprint: FPR, ethAddress: ADDRESS })
+    expect(r.verified).toBe(true)
   })
 
   it('an armored detached signature reduces to the same signature (gpg writes old-style packet headers, openpgp.js new-style; both valid)', async () => {

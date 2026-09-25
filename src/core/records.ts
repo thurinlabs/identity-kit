@@ -1,23 +1,38 @@
-import { hexToString, stringToHex, type Hex } from 'viem'
 import { normalizeFingerprint } from './fingerprint'
 import { recordKind } from './authorization'
 import { verifyClearsigned } from './pgp'
 export { recordKind }
 
 /**
- * Records: one small value per claim per kind, set only by the owner (or by anyone holding
- * the owner's `setRecordFor` authorization), readable by anyone, clearable. The contract looks
- * a record up by kind and cannot list them, so readers ask for the kinds they know.
+ * Records: named text values on a claim, set only by the owner (or with the owner's
+ * `setRecordFor` permission), readable by anyone, clearable. `recordsOf(owner, index)` lists them.
  *
- * Conventions: kind = keccak256("thurin.<name>"); simple kinds are UTF-8 text, structured
- * kinds small JSON with a `v`, encrypted kinds an armored PGP message; readers ignore unknown
- * fields. Third parties use reverse-dot names (`com.example.thing`) without asking. 1 KB max.
+ * Conventions: simple kinds are text, structured kinds small JSON with a `v`, encrypted kinds an
+ * armored PGP message; readers ignore unknown fields. Third parties use reverse-dot names
+ * (`com.example.thing`) without asking. 1 KB max.
  */
 export const MAX_RECORD_BYTES = 1024
+/** Longest record name, `thurin.` included. */
+export const MAX_KIND_BYTES = 31
 
 /** `thurin.` is the default namespace: kindName('canary') === 'thurin.canary'. Dotted names pass through. */
 export function kindName(input: string): string {
   return input.includes('.') ? input : `thurin.${input}`
+}
+
+/** The full record name for `input`, or throws with the registry's rule (a-z 0-9 - . only, 31 bytes). */
+export function checkKindName(input: string): string {
+  if (!/^[a-z0-9.-]+$/.test(input)) throw new Error(`Record name "${input}": use a-z, 0-9, "-" and "." only`)
+  const name = kindName(input)
+  if (name.length > MAX_KIND_BYTES) throw new Error(`Record name "${name}" is ${name.length} bytes; the registry allows ${MAX_KIND_BYTES}`)
+  return name
+}
+
+/** `value` unchanged, or throws if it is over the registry's 1 KB. An empty value clears the record. */
+export function checkRecordValue(value: string): string {
+  const bytes = new TextEncoder().encode(value).length
+  if (bytes > MAX_RECORD_BYTES) throw new Error(`Record is ${bytes} bytes; the registry accepts up to ${MAX_RECORD_BYTES}`)
+  return value
 }
 
 /** Every kind Thurin defines. `thurin.pointer` is the Thurin Labs release list (CLI only; not shown on identity pages). */
@@ -32,16 +47,6 @@ export const IDENTITY_KINDS: readonly KnownKind[] = [
   'thurin.railgun', 'thurin.security', 'thurin.successor', 'thurin.affiliation', 'thurin.canary',
   'thurin.private', 'thurin.disclosure',
 ]
-
-export function encodeRecord(value: string): Hex {
-  const bytes = new TextEncoder().encode(value).length
-  if (bytes > MAX_RECORD_BYTES) throw new Error(`Record is ${bytes} bytes; the registry accepts up to ${MAX_RECORD_BYTES}`)
-  return stringToHex(value)
-}
-
-export function decodeRecord(hex: Hex): string {
-  return hex === '0x' ? '' : hexToString(hex)
-}
 
 // ─── thurin.pointer (release list; Thurin Labs' own) ───────────────────────────────────────
 
@@ -165,22 +170,26 @@ export async function parseRecord(kind: string, text: string, opts: { armoredKey
 
 /** Minimal client shape: viem's PublicClient has it. */
 export interface RecordReader {
-  readContract(args: { address: `0x${string}`; abi: unknown; functionName: 'record'; args: readonly [`0x${string}`, bigint, Hex] }): Promise<unknown>
+  readContract(args: { address: `0x${string}`; abi: unknown; functionName: 'recordsOf'; args: readonly [`0x${string}`, bigint] }): Promise<unknown>
 }
 
 /**
- * Read and parse the given kinds on one claim. Kinds with no record are left out.
- * `registry` is the contract address; pass the kit's REGISTRY_ABI.
+ * The records on one claim, from `recordsOf`, as `{ kind, text }` pairs. `kinds` picks and orders
+ * them (full names); `null` keeps every record in the order it was first set.
  */
+export function pickRecords(names: readonly string[], values: readonly string[], kinds: readonly string[] | null = IDENTITY_KINDS): { kind: string; text: string }[] {
+  const all = names.map((kind, i) => ({ kind, text: values[i] ?? '' })).filter(r => r.text)
+  if (!kinds) return all
+  return kinds.flatMap(k => all.filter(r => r.kind === k))
+}
+
+/** Read and parse the records on one claim. Pass the kit's REGISTRY_ABI. */
 export async function fetchRecords(
   client: RecordReader, registry: `0x${string}`, abi: unknown,
-  owner: `0x${string}`, index: number | bigint, kinds: readonly string[] = IDENTITY_KINDS, opts: { armoredKey?: string } = {},
+  owner: `0x${string}`, index: number | bigint, kinds: readonly string[] | null = IDENTITY_KINDS, opts: { armoredKey?: string } = {},
 ): Promise<ParsedRecord[]> {
+  const [names, values] = await client.readContract({ address: registry, abi, functionName: 'recordsOf', args: [owner, BigInt(index)] }) as [string[], string[]]
   const out: ParsedRecord[] = []
-  for (const kind of kinds) {
-    const hex = await client.readContract({ address: registry, abi, functionName: 'record', args: [owner, BigInt(index), recordKind(kind)] }) as Hex
-    const text = decodeRecord(hex)
-    if (text) out.push(await parseRecord(kind, text, opts))
-  }
+  for (const r of pickRecords(names, values, kinds)) out.push(await parseRecord(r.kind, r.text, opts))
   return out
 }
