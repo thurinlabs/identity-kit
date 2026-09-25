@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const fx = (f: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', f), 'utf8')
-import { kindName, checkKindName, checkRecordValue, recordKind, pickRecords, parseRecord, fetchRecords, addPointer, IDENTITY_KINDS, KNOWN_KINDS } from '../records'
+import { kindName, checkKindName, checkRecordValue, recordKind, pickRecords, pageRecords, parseRecord, fetchRecords, addPointer, IDENTITY_KINDS, KNOWN_KINDS } from '../records'
 
 const BEN = '6E0053911942A889426C1866E34D9266098F7FE7'
 const ZK = '0zk1' + 'qyqxpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn5'   // bech32 charset, real ones are 127 chars
@@ -91,6 +91,11 @@ describe('fetchRecords', () => {
     expect(calls).toHaveLength(1)
     expect(calls[0].functionName).toBe('recordsOf')
     expect(out.map(r => r.kind)).toEqual(['thurin.security', 'thurin.canary'])
+  })
+  it('pageRecords: Thurin kinds in display order, then the rest in first-set order; pointer and empties left out', () => {
+    const names = ['com.b.x', 'thurin.canary', 'thurin.pointer', 'org.a.y', 'thurin.railgun', 'com.c.z']
+    const values = ['1', '2', '3', '4', '5', '']
+    expect(pageRecords(names, values).map(r => r.kind)).toEqual(['thurin.railgun', 'thurin.canary', 'com.b.x', 'org.a.y'])
   })
   it('pickRecords with null keeps every record in first-set order', () => {
     expect(pickRecords(['b.x', 'thurin.canary'], ['1', '2'], null).map(r => r.kind)).toEqual(['b.x', 'thurin.canary'])

@@ -252,6 +252,7 @@ import { fetchRecords, parseRecord, checkKindName, checkRecordValue, IDENTITY_KI
 
 const records = await fetchRecords(publicClient, REGISTRY_ADDRESS, REGISTRY_ABI, owner, claimIndex)         // IDENTITY_KINDS, in display order
 const every = await fetchRecords(publicClient, REGISTRY_ADDRESS, REGISTRY_ABI, owner, claimIndex, null)     // every record on the claim
+// pageRecords(names, values): what an identity page shows, Thurin's kinds first, then others in first-set order
 const one = await parseRecord('thurin.canary', text)   // { valid, reason?, data: { type: 'canary', date, statement, clearsigned } }
 // write: setRecord(index, checkKindName('canary'), checkRecordValue(text)); an empty value clears it
 ```
@@ -381,7 +382,7 @@ Any curve openpgp.js can compute is accepted: Ed25519, Cv25519, NIST P-256/384/5
 | `fetchRecords(…, kinds)` read one kind at a time | one `recordsOf` read; `kinds: null` returns every record |
 | `RegistryDeployment.deployBlock` | removed |
 | a statement containing the address verified | the signed text must be exactly the statement |
-| — | `claimSignature`, `REVOKE_REASONS`, `pickRecords`, `MAX_KIND_BYTES` |
+| — | `claimSignature`, `REVOKE_REASONS`, `pickRecords`, `pageRecords`, `MAX_KIND_BYTES` |
 
 ## Migrating from 0.9.x
 

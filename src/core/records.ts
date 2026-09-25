@@ -183,6 +183,19 @@ export function pickRecords(names: readonly string[], values: readonly string[],
   return kinds.flatMap(k => all.filter(r => r.kind === k))
 }
 
+/** Kinds an identity page never shows (the Thurin Labs release list). */
+export const HIDDEN_KINDS: readonly string[] = ['thurin.pointer']
+
+/**
+ * The records an identity page shows, in page order: Thurin's kinds in their display order, then
+ * everyone else's in the order they were first set on the claim. Empty values and hidden kinds are left out.
+ */
+export function pageRecords(names: readonly string[], values: readonly string[]): { kind: string; text: string }[] {
+  const all = pickRecords(names, values, null).filter(r => !HIDDEN_KINDS.includes(r.kind))
+  const ours = IDENTITY_KINDS.flatMap(k => all.filter(r => r.kind === k))
+  return [...ours, ...all.filter(r => !(IDENTITY_KINDS as readonly string[]).includes(r.kind))]
+}
+
 /** Read and parse the records on one claim. Pass the kit's REGISTRY_ABI. */
 export async function fetchRecords(
   client: RecordReader, registry: `0x${string}`, abi: unknown,
