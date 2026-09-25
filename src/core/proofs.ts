@@ -310,7 +310,7 @@ const verifiers: Record<string, Verifier> = {
 
 /**
  * Check one proof. The third argument is options; a plain string is still accepted as a
- * Neynar API key (the pre-1.3.7 signature).
+ * Neynar API key.
  */
 export async function verifyProof(
   proof: Proof,

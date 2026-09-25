@@ -35,41 +35,40 @@ export function checkRecordValue(value: string): string {
   return value
 }
 
-/** Every kind Thurin defines. `thurin.pointer` is the Thurin Labs release list (CLI only; not shown on identity pages). */
+/** Every kind Thurin defines, in the order an identity page shows them. */
 export const KNOWN_KINDS = [
   'thurin.railgun', 'thurin.security', 'thurin.successor', 'thurin.affiliation', 'thurin.canary',
-  'thurin.private', 'thurin.disclosure', 'thurin.pointer',
+  'thurin.releases', 'thurin.private', 'thurin.disclosure',
 ] as const
 export type KnownKind = (typeof KNOWN_KINDS)[number]
 
-/** The kinds an identity page shows, in display order. */
-export const IDENTITY_KINDS: readonly KnownKind[] = [
-  'thurin.railgun', 'thurin.security', 'thurin.successor', 'thurin.affiliation', 'thurin.canary',
-  'thurin.private', 'thurin.disclosure',
-]
+/** The kinds an identity page shows, in display order: all of them. */
+export const IDENTITY_KINDS: readonly KnownKind[] = KNOWN_KINDS
 
-// ─── thurin.pointer (release list; Thurin Labs' own) ───────────────────────────────────────
+// ─── thurin.releases: the releases an identity put out ─────────────────────────────────────
+// Each entry names a release by the sha256 of its checksum file (SHA256SUMS), so the chain says
+// "this identity put this out", not only "this key signed it". `thurin record add-release` keeps it.
 
-export interface PointerEntry { name: string; sha256: string; date: string; url?: string }
-export interface PointerRecord { v: 1; releases: PointerEntry[] }
+export interface ReleaseEntry { name: string; sha256: string; date: string; url?: string }
+export interface ReleasesRecord { v: 1; releases: ReleaseEntry[] }
 
-export function parsePointer(text: string): PointerRecord {
+export function parseReleases(text: string): ReleasesRecord {
   const p = JSON.parse(text)
-  if (p?.v !== 1 || !Array.isArray(p.releases)) throw new Error('Not a v1 thurin.pointer record')
+  if (p?.v !== 1 || !Array.isArray(p.releases)) throw new Error('Not a v1 thurin.releases record')
   return p
 }
 
 /** Add a release, newest first; drop the oldest until it fits the 1 KB slot. */
-export function addPointer(existing: PointerRecord | null, entry: PointerEntry): { record: PointerRecord; dropped: PointerEntry[] } {
+export function addRelease(existing: ReleasesRecord | null, entry: ReleaseEntry): { record: ReleasesRecord; dropped: ReleaseEntry[] } {
   if (!/^[0-9a-f]{64}$/i.test(entry.sha256)) throw new Error('sha256 must be 64 hex characters')
   const releases = [entry, ...(existing?.releases ?? []).filter(r => r.name !== entry.name)]
-  const dropped: PointerEntry[] = []
-  const record: PointerRecord = { v: 1, releases }
+  const dropped: ReleaseEntry[] = []
+  const record: ReleasesRecord = { v: 1, releases }
   while (new TextEncoder().encode(JSON.stringify(record)).length > MAX_RECORD_BYTES && releases.length > 1) dropped.push(releases.pop()!)
   return { record, dropped }
 }
 
-export function renderPointer(p: PointerRecord): string {
+export function renderReleases(p: ReleasesRecord): string {
   return p.releases.map(r => `${r.name.padEnd(22)} ${r.date}  sha256 ${r.sha256}${r.url ? `  ${r.url}` : ''}`).join('\n')
 }
 
@@ -96,7 +95,7 @@ export type RecordData =
   | { type: 'affiliation'; with: string; role: string | null }
   | { type: 'canary'; date: string; statement: string; clearsigned: boolean; verified: boolean | null; reason?: string }
   | { type: 'encrypted'; recipients: number | null }
-  | { type: 'pointer'; releases: PointerEntry[] }
+  | { type: 'releases'; releases: ReleaseEntry[] }
   | { type: 'text' }
 
 /** Railgun 0zk addresses: bech32m with the `0zk` prefix (`0zk1…`, 127 chars). Charset and length only; the wallet checks the checksum. */
@@ -159,9 +158,9 @@ export async function parseRecord(kind: string, text: string, opts: { armoredKey
       } catch { return invalid('PGP message does not parse') }
       return { ...base, valid: true, data: { type: 'encrypted', recipients } }
     }
-    case 'thurin.pointer': {
-      try { return { ...base, valid: true, data: { type: 'pointer', releases: parsePointer(t).releases } } }
-      catch { return invalid('Not a v1 pointer record') }
+    case 'thurin.releases': {
+      try { return { ...base, valid: true, data: { type: 'releases', releases: parseReleases(t).releases } } }
+      catch { return invalid('Not a v1 release list: expected {"v":1,"releases":[…]}') }
     }
     default:
       return { ...base, valid: true, data: { type: 'text' } }
@@ -169,8 +168,9 @@ export async function parseRecord(kind: string, text: string, opts: { armoredKey
 }
 
 /** Minimal client shape: viem's PublicClient has it. */
+/** Anything with viem's `readContract`, such as a viem `PublicClient`. */
 export interface RecordReader {
-  readContract(args: { address: `0x${string}`; abi: unknown; functionName: 'recordsOf'; args: readonly [`0x${string}`, bigint] }): Promise<unknown>
+  readContract(args: any): Promise<unknown>
 }
 
 /**
@@ -183,15 +183,12 @@ export function pickRecords(names: readonly string[], values: readonly string[],
   return kinds.flatMap(k => all.filter(r => r.kind === k))
 }
 
-/** Kinds an identity page never shows (the Thurin Labs release list). */
-export const HIDDEN_KINDS: readonly string[] = ['thurin.pointer']
-
 /**
  * The records an identity page shows, in page order: Thurin's kinds in their display order, then
- * everyone else's in the order they were first set on the claim. Empty values and hidden kinds are left out.
+ * everyone else's in the order they were first set on the claim. Empty values are left out.
  */
 export function pageRecords(names: readonly string[], values: readonly string[]): { kind: string; text: string }[] {
-  const all = pickRecords(names, values, null).filter(r => !HIDDEN_KINDS.includes(r.kind))
+  const all = pickRecords(names, values, null)
   const ours = IDENTITY_KINDS.flatMap(k => all.filter(r => r.kind === k))
   return [...ours, ...all.filter(r => !(IDENTITY_KINDS as readonly string[]).includes(r.kind))]
 }

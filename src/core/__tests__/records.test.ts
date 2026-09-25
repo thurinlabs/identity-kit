@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const fx = (f: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', f), 'utf8')
-import { kindName, checkKindName, checkRecordValue, recordKind, pickRecords, pageRecords, parseRecord, fetchRecords, addPointer, IDENTITY_KINDS, KNOWN_KINDS } from '../records'
+import { kindName, checkKindName, checkRecordValue, recordKind, pickRecords, pageRecords, parseRecord, fetchRecords, addRelease, IDENTITY_KINDS, KNOWN_KINDS } from '../records'
 
 const BEN = '6E0053911942A889426C1866E34D9266098F7FE7'
 const ZK = '0zk1' + 'qyqxpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn5'   // bech32 charset, real ones are 127 chars
@@ -24,9 +24,9 @@ describe('record kinds and encoding', () => {
     expect(checkRecordValue('hello')).toBe('hello')
     expect(() => checkRecordValue('x'.repeat(1025))).toThrow(/1024/)
   })
-  it('keeps pointer out of the identity page but in the known list', () => {
-    expect(IDENTITY_KINDS).not.toContain('thurin.pointer')
-    expect(KNOWN_KINDS).toContain('thurin.pointer')
+  it('shows the release list on the identity page, after the canary', () => {
+    expect(IDENTITY_KINDS).toEqual(KNOWN_KINDS)
+    expect(IDENTITY_KINDS.indexOf('thurin.releases')).toBe(IDENTITY_KINDS.indexOf('thurin.canary') + 1)
   })
 })
 
@@ -92,20 +92,33 @@ describe('fetchRecords', () => {
     expect(calls[0].functionName).toBe('recordsOf')
     expect(out.map(r => r.kind)).toEqual(['thurin.security', 'thurin.canary'])
   })
-  it('pageRecords: Thurin kinds in display order, then the rest in first-set order; pointer and empties left out', () => {
-    const names = ['com.b.x', 'thurin.canary', 'thurin.pointer', 'org.a.y', 'thurin.railgun', 'com.c.z']
+  it('pageRecords: Thurin kinds in display order, then the rest in first-set order; empties left out', () => {
+    const names = ['com.b.x', 'thurin.releases', 'thurin.canary', 'org.a.y', 'thurin.railgun', 'com.c.z']
     const values = ['1', '2', '3', '4', '5', '']
-    expect(pageRecords(names, values).map(r => r.kind)).toEqual(['thurin.railgun', 'thurin.canary', 'com.b.x', 'org.a.y'])
+    expect(pageRecords(names, values).map(r => r.kind)).toEqual(['thurin.railgun', 'thurin.canary', 'thurin.releases', 'com.b.x', 'org.a.y'])
   })
   it('pickRecords with null keeps every record in first-set order', () => {
     expect(pickRecords(['b.x', 'thurin.canary'], ['1', '2'], null).map(r => r.kind)).toEqual(['b.x', 'thurin.canary'])
   })
 })
 
-describe('pointer (still the CLI release list)', () => {
-  it('adds newest first and drops the oldest when full', () => {
+describe('thurin.releases', () => {
+  it('parses a release list, and says what is wrong with anything else', async () => {
+    const list = JSON.stringify({ v: 1, releases: [{ name: 'tool 1.0.0', sha256: 'b'.repeat(64), date: '2026-09-25', url: 'https://example.com/r/1.0.0' }] })
+    const ok = await parseRecord('thurin.releases', list)
+    expect(ok.valid).toBe(true)
+    expect(ok.data).toEqual({ type: 'releases', releases: [{ name: 'tool 1.0.0', sha256: 'b'.repeat(64), date: '2026-09-25', url: 'https://example.com/r/1.0.0' }] })
+    const bad = await parseRecord('thurin.releases', 'tool 1.0.0')
+    expect(bad.valid).toBe(false)
+    expect(bad.reason).toMatch(/v1 release list/)
+  })
+  it('adds newest first, replaces a same-named entry, and drops the oldest when full', () => {
+    const one = addRelease(null, { name: 'x 1', sha256: 'a'.repeat(64), date: '2026-09-24' }).record
+    const again = addRelease(one, { name: 'x 1', sha256: 'c'.repeat(64), date: '2026-09-25' }).record
+    expect(again.releases).toHaveLength(1)
+    expect(again.releases[0].sha256).toBe('c'.repeat(64))
     let rec = null as any
-    for (let i = 0; i < 40; i++) rec = addPointer(rec, { name: `thurin-cli 0.${i}.0`, sha256: 'a'.repeat(64), date: '2026-09-23', url: 'https://github.com/thurinlabs/thurin-cli/releases/tag/v0' }).record
+    for (let i = 0; i < 40; i++) rec = addRelease(rec, { name: `thurin-cli 0.${i}.0`, sha256: 'a'.repeat(64), date: '2026-09-23', url: 'https://github.com/thurinlabs/thurin-cli/releases/tag/v0' }).record
     expect(rec.releases[0].name).toBe('thurin-cli 0.39.0')
     expect(new TextEncoder().encode(JSON.stringify(rec)).length).toBeLessThanOrEqual(1024)
   })

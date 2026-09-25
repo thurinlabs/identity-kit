@@ -28,7 +28,7 @@ function renderCards() {
     // Optional config via data attributes — everything stays client-side.
     // data-rpc-url: any Ethereum RPC (reads are plain eth_call; the keyless public default works).
     // data-farcaster-hub: optional Farcaster node for Farcaster proofs (default: a public keyless node).
-    // data-neynar-key: optional, read Farcaster through Neynar instead (not needed since 1.3.7).
+    // data-neynar-key: optional, read Farcaster through Neynar instead of the keyless node.
     // data-base-url: where "View on Thurin" points (default https://thurin.id);
     //   a page served from ENS sets its own name here so the link stays on ENS.
     const rpcUrl = el.dataset.rpcUrl

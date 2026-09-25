@@ -27,10 +27,10 @@ export type {
 } from './types'
 export { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry, isNetworkName, chainFor } from './contract'
 export {
-  MAX_RECORD_BYTES, MAX_KIND_BYTES, KNOWN_KINDS, IDENTITY_KINDS, kindName, checkKindName, checkRecordValue, pickRecords, pageRecords, HIDDEN_KINDS,
-  parsePointer, addPointer, renderPointer, parseRecord, fetchRecords,
+  MAX_RECORD_BYTES, MAX_KIND_BYTES, KNOWN_KINDS, IDENTITY_KINDS, kindName, checkKindName, checkRecordValue, pickRecords, pageRecords,
+  parseReleases, addRelease, renderReleases, parseRecord, fetchRecords,
 } from './records'
-export type { KnownKind, ParsedRecord, RecordData, PointerEntry, PointerRecord, RecordReader } from './records'
+export type { KnownKind, ParsedRecord, RecordData, ReleaseEntry, ReleasesRecord, RecordReader } from './records'
 export { identityErrorKind, needsRpcProbe, IDENTITY_ERROR_TEXT } from './identityError'
 export { CLAIM_CHECK_LABEL, claimCheckText, formatClaimDate, expiresSoon, expiresSoonText, claimFates, claimFateText } from './claimStatus'
 export type { ClaimCheckText, ClaimFate } from './claimStatus'
