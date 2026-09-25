@@ -373,7 +373,7 @@ Any curve openpgp.js can compute is accepted: Ed25519, Cv25519, NIST P-256/384/5
 
 ## Migrating from 1.x
 
-2.0.0 reads **PGPRegistry v3** (`0x0D9beb4178BB81f123d8b68cc4BB58dc538b9203` on Ethereum mainnet and Sepolia). Claims store the key and signature as raw bytes.
+2.0.0 reads **PGPRegistry v3** (`0xFa6956c11163517249f8A67F5560a4406B519451` on Ethereum mainnet and Sepolia). Claims store the key and signature as raw bytes.
 
 | 1.x | 2.0.0 |
 |-----|-------|

@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { attestTypedData, reattestTypedData, updateKeyTypedData, revokeTypedData, setRecordTypedData, authorizationDigest, registryDomain, recordKind } from '../authorization'
+import { attestTypedData, reattestTypedData, updateKeyTypedData, revokeTypedData, setRecordTypedData, markCompromisedTypedData, authorizationDigest, registryDomain, recordKind } from '../authorization'
 import { hashDomain, getTypesForEIP712Domain, keccak256, stringToHex } from 'viem'
 
 // Vectors from pgp-registry's PGPRegistryVectorTest (`forge test --match-contract PGPRegistryVectorTest -vv`):
-// the registry accepted a permission signed over each digest, in this order, nonces 0 to 4.
+// the registry accepted a permission signed over each digest, in this order, nonces 0 to 5.
 const CHAIN = 31337
 const REGISTRY = '0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f' as const
 const OWNER = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8' as const
@@ -39,6 +39,11 @@ describe('EIP-712 permissions match the contract', () => {
   it('reattest', () => {
     const td = reattestTypedData(CHAIN, REGISTRY, { owner: OWNER, revokeIndex: 0n, fingerprint: FP2, signature: SIG, key: KEY, keepRecords: true, nonce: 3n, deadline })
     expect(authorizationDigest(td)).toBe('0x5bfbb6a1ffe7f4516374b6b54833a6e184175881c8071877de5a8d00af9e17fd')
+  })
+
+  it('markCompromised', () => {
+    const td = markCompromisedTypedData(CHAIN, REGISTRY, { owner: OWNER, index: 0n, nonce: 5n, deadline })
+    expect(authorizationDigest(td)).toBe('0x7ae43484ef68e0a310e41e8d119a275f802779dd69af2e92adff92fb41e36f28')
   })
 
   it('revoke', () => {

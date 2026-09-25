@@ -3,7 +3,7 @@ import { fingerprintToBytes } from './fingerprint'
 
 /**
  * EIP-712 permissions for the registry's relayed writes (`attestFor`, `reattestFor`,
- * `updateKeyFor`, `revokeFor`, `setRecordFor`). The owner signs one; anyone can submit the
+ * `updateKeyFor`, `revokeFor`, `setRecordFor`, `markCompromisedFor`). The owner signs one; anyone can submit the
  * matching call and pay the gas. Every field is bound, plus the owner's `nonces(owner)` and a
  * `deadline`. The domain includes the chain id, so a permission can't be replayed on another network.
  */
@@ -55,6 +55,12 @@ export const AUTHORIZATION_TYPES = {
     { name: 'nonce', type: 'uint256' },
     { name: 'deadline', type: 'uint256' },
   ],
+  MarkCompromised: [
+    { name: 'owner', type: 'address' },
+    { name: 'index', type: 'uint256' },
+    { name: 'nonce', type: 'uint256' },
+    { name: 'deadline', type: 'uint256' },
+  ],
 } as const
 
 export type AuthorizationAction = keyof typeof AUTHORIZATION_TYPES
@@ -73,6 +79,8 @@ export type UpdateKeyAuthorization = Common & { index: bigint; key: string }
 export type RevokeAuthorization = Common & { index: bigint; reason?: RevokeReason }
 /** `kind` exactly as it will be submitted (the registry adds `thurin.` to undotted names itself). */
 export type SetRecordAuthorization = Common & { index: bigint; kind: string; value: string }
+/** Mark an already revoked or replaced claim compromised (`markCompromisedFor`). A Revoke permission never can. */
+export type MarkCompromisedAuthorization = Common & { index: bigint }
 
 /** `0x…` hex is raw bytes; anything else (a clearsigned message) is UTF-8 text. */
 function payloadBytes(v: string): Hex {
@@ -141,8 +149,17 @@ export function setRecordTypedData(chainId: number, registry: Hex, a: SetRecordA
   }
 }
 
+export function markCompromisedTypedData(chainId: number, registry: Hex, a: MarkCompromisedAuthorization) {
+  return {
+    domain: registryDomain(chainId, registry),
+    types: { MarkCompromised: AUTHORIZATION_TYPES.MarkCompromised },
+    primaryType: 'MarkCompromised' as const,
+    message: { owner: a.owner, index: a.index, nonce: a.nonce, deadline: a.deadline },
+  }
+}
+
 /** The digest the registry recovers the signer from. */
-export function authorizationDigest(typedData: ReturnType<typeof attestTypedData | typeof reattestTypedData | typeof updateKeyTypedData | typeof revokeTypedData | typeof setRecordTypedData>): Hex {
+export function authorizationDigest(typedData: ReturnType<typeof attestTypedData | typeof reattestTypedData | typeof updateKeyTypedData | typeof revokeTypedData | typeof setRecordTypedData | typeof markCompromisedTypedData>): Hex {
   return hashTypedData(typedData as any)
 }
 

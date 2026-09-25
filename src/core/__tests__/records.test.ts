@@ -87,7 +87,7 @@ describe('fetchRecords', () => {
   it('reads recordsOf once, keeps identity kinds in display order, skips empty values', async () => {
     const calls: any[] = []
     const client = { readContract: async (a: any) => { calls.push(a); return [['com.example.x', 'thurin.canary', 'thurin.security', 'thurin.railgun'], ['x', 'ok as of 2026-09-23', 'mailto:a@example.com', '']] } }
-    const out = await fetchRecords(client as any, '0x0D9beb4178BB81f123d8b68cc4BB58dc538b9203', [], '0x539C7e1E454296Dc150B95a0acCC05bCa3b33538', 0)
+    const out = await fetchRecords(client as any, '0xFa6956c11163517249f8A67F5560a4406B519451', [], '0x539C7e1E454296Dc150B95a0acCC05bCa3b33538', 0)
     expect(calls).toHaveLength(1)
     expect(calls[0].functionName).toBe('recordsOf')
     expect(out.map(r => r.kind)).toEqual(['thurin.security', 'thurin.canary'])

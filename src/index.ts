@@ -32,12 +32,12 @@ export {
 } from './core/fingerprint'
 export {
   EIP712_NAME, EIP712_VERSION, AUTHORIZATION_TYPES, registryDomain,
-  attestTypedData, reattestTypedData, updateKeyTypedData, revokeTypedData, setRecordTypedData,
+  attestTypedData, reattestTypedData, updateKeyTypedData, revokeTypedData, setRecordTypedData, markCompromisedTypedData,
   authorizationDigest, recordKind, REVOKE_REASONS, OWNER_REVOKE_REASONS,
 } from './core/authorization'
 export type {
   AuthorizationAction, AttestAuthorization, ReattestAuthorization, UpdateKeyAuthorization,
-  RevokeAuthorization, SetRecordAuthorization, RevokeReason,
+  RevokeAuthorization, SetRecordAuthorization, MarkCompromisedAuthorization, RevokeReason,
 } from './core/authorization'
 
 // Types

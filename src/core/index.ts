@@ -14,12 +14,12 @@ export {
 } from './fingerprint'
 export {
   EIP712_NAME, EIP712_VERSION, AUTHORIZATION_TYPES, registryDomain,
-  attestTypedData, reattestTypedData, updateKeyTypedData, revokeTypedData, setRecordTypedData,
+  attestTypedData, reattestTypedData, updateKeyTypedData, revokeTypedData, setRecordTypedData, markCompromisedTypedData,
   authorizationDigest, recordKind, REVOKE_REASONS, OWNER_REVOKE_REASONS,
 } from './authorization'
 export type {
   AuthorizationAction, AttestAuthorization, ReattestAuthorization, UpdateKeyAuthorization,
-  RevokeAuthorization, SetRecordAuthorization, RevokeReason,
+  RevokeAuthorization, SetRecordAuthorization, MarkCompromisedAuthorization, RevokeReason,
 } from './authorization'
 export type {
   ThurinIdentity, Attestation, PGPVerification, ClaimCheckKind, PGPKeyInfo, SubkeyInfo, Notation, Proof,

@@ -67,6 +67,19 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "function",
+    "name": "MARK_COMPROMISED_TYPEHASH",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "MAX_CLAIMS_PER_OWNER",
     "inputs": [],
     "outputs": [
@@ -844,6 +857,34 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "function",
+    "name": "markCompromisedFor",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "deadline",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "permission",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "multicall",
     "inputs": [
       {
@@ -1580,6 +1621,17 @@ export const REGISTRY_ABI = [
     "type": "error",
     "name": "BadBase64",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ClaimActive",
+    "inputs": [
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
