@@ -148,7 +148,9 @@ describe('claimFates: revoked vs replaced', () => {
       { index: 1, revokedAt: 300, state: 'replaced', replacedBy: 2, revokeReason: 'superseded' },
       { index: 2, revokedAt: null, state: 'active', replacedBy: null, revokeReason: '' },
       { index: 3, revokedAt: 400, state: 'revoked', replacedBy: null, revokeReason: '' },
+      { index: 4, revokedAt: 500, state: 'replaced', replacedBy: 5, revokeReason: 'compromised' },
     ])
+    expect(claimFateText(fates.get(4)!)).toBe(`Replaced by claim #5 on ${formatClaimDate(500)}. Its key was marked compromised.`)
     expect(fates.get(0)).toEqual({ state: 'revoked', at: 150, reason: 'compromised' })
     expect(fates.get(1)).toEqual({ state: 'replaced', at: 300, by: 2 })
     expect(fates.get(2)).toEqual({ state: 'active' })

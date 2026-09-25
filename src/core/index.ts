@@ -15,7 +15,7 @@ export {
 export {
   EIP712_NAME, EIP712_VERSION, AUTHORIZATION_TYPES, registryDomain,
   attestTypedData, reattestTypedData, updateKeyTypedData, revokeTypedData, setRecordTypedData,
-  authorizationDigest, recordKind, REVOKE_REASONS,
+  authorizationDigest, recordKind, REVOKE_REASONS, OWNER_REVOKE_REASONS,
 } from './authorization'
 export type {
   AuthorizationAction, AttestAuthorization, ReattestAuthorization, UpdateKeyAuthorization,

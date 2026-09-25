@@ -1,8 +1,8 @@
 import { mainnet, sepolia, foundry } from 'viem/chains'
 export { REGISTRY_ABI } from './abi'
 
-/** PGPRegistry v3. Deployed with CREATE2, so the address is the same on every network. */
-export const REGISTRY_ADDRESS = '0x4f2d70799cAAD651C7c564426AA74A842c1331B6' as const
+/** PGPRegistry v3. Deployed with CREATE2, so the address is the same on mainnet, Sepolia, and a local anvil. */
+export const REGISTRY_ADDRESS = '0x0D9beb4178BB81f123d8b68cc4BB58dc538b9203' as const
 
 /** Networks the PGPRegistry is deployed on. `mainnet` is the default everywhere. */
 export type NetworkName = 'mainnet' | 'sepolia' | 'local'

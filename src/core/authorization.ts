@@ -59,9 +59,11 @@ export const AUTHORIZATION_TYPES = {
 
 export type AuthorizationAction = keyof typeof AUTHORIZATION_TYPES
 
-/** Revoke reasons the registry accepts ('' = none given). */
+/** Every revoke reason a claim can show ('' = none given). "superseded" is set only by reattest. */
 export const REVOKE_REASONS = ['', 'compromised', 'retired', 'superseded', 'other'] as const
 export type RevokeReason = (typeof REVOKE_REASONS)[number]
+/** The reasons an owner can give to `revoke`. "compromised" is final: that address can never claim the key again. */
+export const OWNER_REVOKE_REASONS = ['', 'compromised', 'retired', 'other'] as const
 
 interface Common { owner: Hex; nonce: bigint; deadline: bigint }
 /** `signature` and `key` are the raw bytes as `0x…` hex (or a clearsigned message as text). */

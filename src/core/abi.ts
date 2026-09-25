@@ -820,6 +820,30 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "function",
+    "name": "keyStatus",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "fingerprint",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "multicall",
     "inputs": [
       {
@@ -1470,6 +1494,31 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "event",
+    "name": "RecordsMoved",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "fromIndex",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "toIndex",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "Revoked",
     "inputs": [
       {
@@ -1619,6 +1668,28 @@ export const REGISTRY_ABI = [
   },
   {
     "type": "error",
+    "name": "KeyCompromised",
+    "inputs": [
+      {
+        "name": "fingerprint",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "KeyStillActive",
+    "inputs": [
+      {
+        "name": "fingerprint",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "KeyTooLarge",
     "inputs": [
       {
@@ -1718,6 +1789,11 @@ export const REGISTRY_ABI = [
         "internalType": "uint256"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "SupersededIsSetByReattest",
+    "inputs": []
   },
   {
     "type": "error",

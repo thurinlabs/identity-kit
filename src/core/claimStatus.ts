@@ -88,14 +88,14 @@ export function expiresSoonText(soon: { days: number; at: string }, formatDate: 
 export type ClaimFate =
   | { state: 'active' }
   | { state: 'revoked'; at: number; reason?: string }
-  | { state: 'replaced'; at: number; by: number }
+  | { state: 'replaced'; at: number; by: number; compromised?: boolean }
 
 /** Active, revoked (with the owner's reason), or replaced, for each of one owner's claims (keyed by index). */
 export function claimFates(claims: Pick<Attestation, 'index' | 'revokedAt' | 'state' | 'replacedBy' | 'revokeReason'>[]): Map<number, ClaimFate> {
   const out = new Map<number, ClaimFate>()
   for (const c of claims) {
     if (c.state === 'active' || !c.revokedAt) out.set(c.index, { state: 'active' })
-    else if (c.state === 'replaced' && c.replacedBy !== null) out.set(c.index, { state: 'replaced', at: c.revokedAt, by: c.replacedBy })
+    else if (c.state === 'replaced' && c.replacedBy !== null) out.set(c.index, { state: 'replaced', at: c.revokedAt, by: c.replacedBy, ...(c.revokeReason === 'compromised' ? { compromised: true } : {}) })
     else out.set(c.index, { state: 'revoked', at: c.revokedAt, ...(c.revokeReason ? { reason: c.revokeReason } : {}) })
   }
   return out
@@ -104,6 +104,6 @@ export function claimFates(claims: Pick<Attestation, 'index' | 'revokedAt' | 'st
 /** "Revoked by its owner on Oct 3, 2026 (compromised)." / "Replaced by claim #2 on Oct 3, 2026." */
 export function claimFateText(fate: ClaimFate, formatDate: (seconds: number) => string = s => formatClaimDate(s)): string | null {
   if (fate.state === 'revoked') return `Revoked by its owner on ${formatDate(fate.at)}${fate.reason ? ` (${fate.reason})` : ''}.`
-  if (fate.state === 'replaced') return `Replaced by claim #${fate.by} on ${formatDate(fate.at)}.`
+  if (fate.state === 'replaced') return `Replaced by claim #${fate.by} on ${formatDate(fate.at)}.${fate.compromised ? ' Its key was marked compromised.' : ''}`
   return null
 }

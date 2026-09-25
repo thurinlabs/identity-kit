@@ -112,6 +112,8 @@ const { claims, totalClaims, activeClaims, currentFingerprint, isLoading } =
 //            messageVersion, pgpSignature, pgpPublicKey, verification }
 ```
 
+`keyStatus(owner, fingerprint)` on the contract says whether an address can claim a key: `'none'`, `'active'`, `'revoked'`, or `'compromised'` (revoked as compromised: that address can never claim it again). An owner can mark a claim they already revoked or replaced as compromised later, once; "superseded" is set only by reattest (`OWNER_REVOKE_REASONS` lists what `revoke` takes).
+
 `state` is `'active'`, `'revoked'`, or `'replaced'` (revoked by a reattest; `replacedBy` is the new claim's index). `pgpPublicKey` and `pgpSignature` come back as armored text, ready for display or `gpg --import`.
 
 ### useEFPGraph
@@ -243,7 +245,7 @@ import { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry } from '@thurinla
 getRegistry('sepolia') // → { chainId: 11155111, address, explorerUrl, defaultRpcUrl }
 ```
 
-`REGISTRY_ABI` is the complete ABI (reads and writes), so apps that publish claims use the same one. The registry is deployed with CREATE2 and has the same address on every network.
+`REGISTRY_ABI` is the complete ABI (reads and writes), so apps that publish claims use the same one. The registry is deployed with CREATE2, so it has the same address on Ethereum mainnet and Sepolia.
 
 ### Records
 
@@ -371,7 +373,7 @@ Any curve openpgp.js can compute is accepted: Ed25519, Cv25519, NIST P-256/384/5
 
 ## Migrating from 1.x
 
-2.0.0 reads **PGPRegistry v3** (`0x4f2d70799cAAD651C7c564426AA74A842c1331B6`, every network). Claims store the key and signature as raw bytes.
+2.0.0 reads **PGPRegistry v3** (`0x0D9beb4178BB81f123d8b68cc4BB58dc538b9203` on Ethereum mainnet and Sepolia). Claims store the key and signature as raw bytes.
 
 | 1.x | 2.0.0 |
 |-----|-------|
