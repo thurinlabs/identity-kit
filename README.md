@@ -8,60 +8,30 @@ Full reference: [docs.thurin.id/#/sdk](https://docs.thurin.id/#/sdk).
 npm install @thurinlabs/identity-kit
 ```
 
-Two entry points:
+Runs in Node, workers, and browsers. The only peer dependency is `viem`. `@thurinlabs/identity-kit/core` is the same entry, for older imports.
 
-- `@thurinlabs/identity-kit`: React hooks and their provider, plus everything in core. Peer dependencies: `react`, `react-dom`, `wagmi`, `viem`, `@tanstack/react-query`.
-- `@thurinlabs/identity-kit/core`: plain functions, no React or DOM. For Node, workers, and your own UI. Needs only `viem` as a peer.
-
-## React
-
-```tsx
-import { IdentityKitProvider, useThurinIdentity } from '@thurinlabs/identity-kit'
-
-<IdentityKitProvider>
-  <YourApp />
-</IdentityKitProvider>
-```
-
-`IdentityKitProvider` works with no props: it reads through a keyless public node. If your app already has a `WagmiProvider`, it uses that.
-
-| Prop | Default | |
-|---|---|---|
-| `rpcUrl` | `https://ethereum.publicnode.com` | any Ethereum RPC; reads are plain `eth_call` |
-| `network` | `mainnet` | `mainnet`, `sepolia`, or `local` (anvil) |
-| `registryAddress` | `REGISTRY_ADDRESS` | override the registry address |
-| `farcasterHub` | Quilibrium's keyless node | Farcaster node for Farcaster proofs |
-| `neynarApiKey` | none | read Farcaster through Neynar instead |
-
-## Hooks
-
-```tsx
-const id = useThurinIdentity('thurinlabs.eth')   // or an address
-// id.address, ensName, ensAvatar, claims, totalClaims, activeClaims,
-// currentFingerprint, pgpKeyInfo, proofs, isLoading, error, errorKind, retry()
-```
-
-`currentFingerprint` is the newest active claim whose signature verifies. Nothing from an unverified claim is shown.
-
-Also `useAttestations(address)`, `usePGPProofs(fingerprint, armoredKey)`, `useRecords(address, index)`, `useEnsHint(name, fingerprint)`, and `useSafeAvatar(name, chainId)`. Avatars only load from places that can't see the viewer: IPFS, Arweave, inline data, a content-addressed NFT, or `euc.li`.
-
-## Core
+## Read an address
 
 ```ts
 import { createPublicClient, http } from 'viem'
 import { mainnet } from 'viem/chains'
-import { REGISTRY_ADDRESS, REGISTRY_ABI, bytesToFingerprint, verifyAttestation, claimCheckText } from '@thurinlabs/identity-kit/core'
+import { readClaims, keyStanding, claimCheckText } from '@thurinlabs/identity-kit'
 
-const client = createPublicClient({ chain: mainnet, transport: http('https://ethereum.publicnode.com') })
-const owner = '0xYourAddress' as `0x${string}`
+const client = createPublicClient({ chain: mainnet, transport: http('https://ethereum.publicnode.com'), batch: { multicall: true } })
 
-const claims = await client.readContract({ address: REGISTRY_ADDRESS, abi: REGISTRY_ABI, functionName: 'claimsOf', args: [owner] })
-for (const c of claims) {
-  const key = await client.readContract({ address: REGISTRY_ADDRESS, abi: REGISTRY_ABI, functionName: 'keyBytes', args: [owner, c.index] })
-  const sig = await client.readContract({ address: REGISTRY_ADDRESS, abi: REGISTRY_ABI, functionName: 'signatureBytes', args: [owner, c.index] })
-  const v = await verifyAttestation({ pgpPublicKey: key, pgpSignature: sig, fingerprint: bytesToFingerprint(c.fingerprint), ethAddress: owner })
-  console.log(c.index, c.state, c.revokeReason, v.verified ? 'verified' : claimCheckText(v).label)
-}
+const claims = await readClaims(client, '0x539C7e1E454296Dc150B95a0acCC05bCa3b33538')
+const { kind, claim } = keyStanding(claims)
+// kind: verified · not-counted (active claims, none verify) · inactive (only ended claims) · none
+if (kind === 'verified') console.log(claim.fingerprint, claim.pgpPublicKey)
+if (kind === 'not-counted' && claim.verification) console.log(claimCheckText(claim.verification).label)
+```
+
+`readClaims` returns every claim, oldest first, and reads and verifies the newest 50 (`{ limit }` changes that; older ones come back with `verification: null`). `keyStanding` picks the newest active claim that verifies. `findOwners(client, { fingerprint })` or `{ keyId }` goes the other way: every address that ever claimed a key. ENS is left to you: resolve the name with viem first. `batch: { multicall: true }` makes the reads one request.
+
+In React, wrap it in whatever you use for data, for example:
+
+```tsx
+const { data: claims } = useQuery({ queryKey: ['claims', address], queryFn: () => readClaims(client, address) })
 ```
 
 `verifyAttestation` checks that the key has the claimed fingerprint, that the signature is over exactly `I control the Ethereum address: <lowercase address>`, and that the key is valid today, as gpg judges it. When a claim doesn't count, `kind` says why (`expired`, `revoked`, `compromised`, `unsupported`, `bad-signature`, …) and `claimCheckText` turns it into words.
@@ -70,7 +40,7 @@ for (const c of claims) {
 
 **Is a key compromised?** Ask the contract: `keyStatus(owner, fingerprint)`. Don't read it off the newest claim, and never count "compromised" across owners: anyone can claim any fingerprint and mark it under their own address.
 
-The rest of core, all covered in the [docs](https://docs.thurin.id/#/sdk):
+The rest, all covered in the [docs](https://docs.thurin.id/#/sdk):
 
 - **Proofs:** `identifyProof`, `verifyProof` (GitHub, DNS, Farcaster, Codeberg, Mastodon; a GitHub or Codeberg proof must belong to the account in its URL).
 - **Claim history:** `claimFates`, `claimFateText`, `expiresSoon`, `expiresSoonText`.
@@ -78,6 +48,7 @@ The rest of core, all covered in the [docs](https://docs.thurin.id/#/sdk):
 - **Permissions:** `attestTypedData`, `reattestTypedData`, `updateKeyTypedData`, `revokeTypedData`, `setRecordTypedData`, `markCompromisedTypedData`, for the registry's `…For` writes. To mark an already revoked claim compromised, sign `markCompromisedTypedData` alone.
 - **Keys:** `parsePgpKey`, `leanKey`, `claimSignature`, `stripEmailUserIDs`, fingerprint and key-ID helpers.
 - **ENS:** `fetchEnsHint`, `ensHintWrite` for the `id.thurin` record.
+- **Avatars:** `avatarUrl`, `avatarFallbacks`, only from places that can't see the viewer: IPFS, Arweave, inline data, a content-addressed NFT, or `euc.li`.
 
 ## A card for your README
 
@@ -93,11 +64,12 @@ Anything openpgp.js can verify: Ed25519, Cv25519, NIST P-256/384/521, brainpool,
 
 | 1.x | 2.0.0 |
 |---|---|
-| `attestationsOf`, `getPayload` | `claimsOf`, `keyBytes`, `signatureBytes` (the hooks do this for you) |
+| `attestationsOf`, `getPayload` | `claimsOf`, `keyBytes`, `signatureBytes`; `readClaims` does it for you |
 | `Attestation` | adds `state`, `replacedBy`, `revokeReason`; `messageVersion` 1 = detached, 0 = clearsigned |
 | typed data `pgpSignature`, `pgpPublicKey` | `signature`, `key`; `Reattest` adds `keepRecords`, `Revoke` adds `reason`, `SetRecord` takes text; new `MarkCompromised` |
 | `encodeRecord`, `decodeRecord`, `bytes32` kinds | text records listed by `recordsOf`; `checkKindName`, `checkRecordValue` |
 | `RegistryDeployment.deployBlock` | removed |
+| `IdentityKitProvider` and the hooks (`useThurinIdentity`, `useAttestations`, …) | removed; `readClaims`, `keyStanding`, `findOwners` in any framework |
 | `ThurinCard`, the embed script, `/styles`, `Theme`, the `baseUrl` prop | removed; use the [card image](https://docs.thurin.id/#/sdk?id=readme-card) |
 | a statement containing the address verified | the signed text must be exactly the statement |
 

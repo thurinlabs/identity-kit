@@ -1,8 +1,6 @@
 /**
- * @thurinlabs/identity-kit/core — the verification and data layer with no React,
- * wagmi, or DOM dependency. This is what the Thurin CLI, the og service, and any
- * Node or worker consumer import. The root entry re-exports all of this plus the
- * React hooks and provider.
+ * @thurinlabs/identity-kit: reads and checks Thurin.id claims. No React, wagmi, or DOM
+ * dependency, so it runs in Node, workers, and browsers alike. `/core` is the same entry.
  */
 export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref, FARCASTER_HUB } from './proofs'
 export type { ProofOptions } from './proofs'
@@ -21,19 +19,18 @@ export type {
   RevokeAuthorization, SetRecordAuthorization, MarkCompromisedAuthorization, RevokeReason,
 } from './authorization'
 export type {
-  ThurinIdentity, Attestation, PGPVerification, ClaimCheckKind, PGPKeyInfo, SubkeyInfo, Notation, Proof,
-  ProofResult, IdentityKitConfig,
+  Attestation, PGPVerification, ClaimCheckKind, PGPKeyInfo, SubkeyInfo, Notation, Proof,
 } from './types'
 export { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry, isNetworkName, chainFor } from './contract'
+export { readClaims, keyStanding, findOwners, CLAIM_LIMIT } from './claims'
+export type { ClaimReader, KeyStanding } from './claims'
 export {
   MAX_RECORD_BYTES, MAX_KIND_BYTES, KNOWN_KINDS, kindName, checkKindName, checkRecordValue, pickRecords, pageRecords,
   parseReleases, addRelease, renderReleases, parseRecord, fetchRecords,
 } from './records'
 export type { KnownKind, ParsedRecord, RecordData, ReleaseEntry, ReleasesRecord, RecordReader } from './records'
-export { identityErrorKind, needsRpcProbe, IDENTITY_ERROR_TEXT } from './identityError'
 export { CLAIM_CHECK_LABEL, claimCheckText, formatClaimDate, expiresSoon, expiresSoonText, claimFates, claimFateText } from './claimStatus'
 export type { ClaimCheckText, ClaimFate } from './claimStatus'
-export type { IdentityErrorKind, IdentityLookupState } from './identityError'
 export { avatarUrl, avatarFallbacks, parseNftAvatar, nftAvatarImage, NFT_AVATAR_ABI, IPFS_GATEWAY, IPFS_GATEWAYS, ARWEAVE_GATEWAY } from './avatar'
 export type { NftAvatar } from './avatar'
 export { ENS_HINT_KEY, ENS_TEXT_RESOLVER_ABI, ensHintFor, ensHintValue, ensHintWrite, fetchEnsHint } from './ensHint'

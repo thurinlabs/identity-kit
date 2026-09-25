@@ -20,6 +20,7 @@ export interface Attestation {
   pgpSignature: string | null
   /** The armored public key (null only if the read failed). */
   pgpPublicKey: string | null
+  /** null when the claim wasn't read: older than `readClaims`' limit. */
   verification: PGPVerification | null
 }
 
@@ -83,47 +84,4 @@ export interface Proof {
   gistId?: string
   castHash?: string
   domain?: string
-}
-
-export interface ProofResult {
-  provider: string
-  label: string
-  url: string
-  displayUrl: string
-  href: string | null
-  secondaryHref: string | null
-  status: 'verified' | 'unverified' | 'pending' | 'skipped'
-  reason?: string
-}
-
-export interface ThurinIdentity {
-  address: string | null
-  ensName: string | null
-  ensAvatar: string | null
-  claims: Attestation[]
-  totalClaims: number
-  activeClaims: number
-  currentFingerprint: string | null
-  pgpKeyInfo: PGPKeyInfo | null
-  proofs: ProofResult[]
-  isLoading: boolean
-  /** Set when the identity couldn't be shown; the message is plain and safe to display. */
-  error: Error | null
-  /** Why: the RPC didn't answer, the ENS name has no address, or a registry read failed. */
-  errorKind: 'rpc' | 'not-found' | 'read' | null
-  /** Re-run the lookups (for a "Try again" button). */
-  retry: () => void
-}
-
-
-export interface IdentityKitConfig {
-  rpcUrl?: string
-  /** Optional: read Farcaster proofs through Neynar's hub with this key instead of the keyless node. */
-  neynarApiKey?: string
-  /** A Farcaster node's HTTP API for Farcaster proofs. Default: Quilibrium's public Hypersnap node (keyless). */
-  farcasterHub?: string
-  /** Which PGPRegistry deployment to read: 'mainnet' (default), 'sepolia', or 'local' (anvil). */
-  network?: 'mainnet' | 'sepolia' | 'local'
-  /** Override the registry address (e.g. a local deploy that landed elsewhere). */
-  registryAddress?: string
 }
