@@ -246,6 +246,10 @@ async function verifyCodeberg(proof: Proof, fingerprint: string): Promise<PGPVer
     )
     if (!resp.ok) return { verified: false, reason: `Codeberg API returned ${resp.status}` }
     const data = await resp.json()
+    // A renamed or transferred repository can answer under a different owner than the URL names.
+    if (data.owner?.login?.toLowerCase() !== proof.user!.toLowerCase()) {
+      return { verified: false, reason: 'Repository owner does not match claimed account' }
+    }
 
     if (data.description && containsFingerprint(data.description, fingerprint)) {
       return { verified: true }

@@ -362,6 +362,7 @@ describe('verifyProof', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => ({
+        owner: { login: 'Alice' },
         description: `thurin-id=openpgp4fpr:${fingerprint}`,
       }),
     } as Response)
@@ -369,6 +370,21 @@ describe('verifyProof', () => {
     const proof = { provider: 'codeberg', label: 'Codeberg', url: '', user: 'alice', repo: 'thurin-proof' }
     const result = await verifyProof(proof, fingerprint)
     expect(result.verified).toBe(true)
+  })
+
+  it('rejects a Codeberg repo answering under another owner (renamed or transferred)', async () => {
+    const fingerprint = '03E53D807CE38C130ED42ECECD3D0D7F0C9E5FB8'
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        owner: { login: 'mallory' },
+        description: `thurin-id=openpgp4fpr:${fingerprint}`,
+      }),
+    } as Response)
+
+    const proof = { provider: 'codeberg', label: 'Codeberg', url: '', user: 'alice', repo: 'thurin-proof' }
+    const result = await verifyProof(proof, fingerprint)
+    expect(result.verified).toBe(false)
   })
 })
 
