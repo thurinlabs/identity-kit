@@ -70,7 +70,7 @@ export function ThurinCard({ ens, address, theme = 'thurin' }: ThurinCardProps) 
           )}
         </div>
         {profileUrl && identity.errorKind !== 'not-found' && (
-          <a className="thurin-card-link" href={profileUrl} target="_blank" rel="noopener noreferrer">View on Thurin</a>
+          <a className="thurin-card-link" href={profileUrl} target="_blank" rel="noopener noreferrer">View on Thurin.id</a>
         )}
       </div>
     )
@@ -96,7 +96,7 @@ export function ThurinCard({ ens, address, theme = 'thurin' }: ThurinCardProps) 
       <div className="thurin-card-stats">
         <div className="thurin-card-stat">
           <span className="thurin-card-stat-value">{identity.activeClaims}</span>
-          <span className="thurin-card-stat-label">Attestations</span>
+          <span className="thurin-card-stat-label">Claims</span>
         </div>
         <div className="thurin-card-stat">
           <span className="thurin-card-stat-value">{verifiedProofs}</span>
@@ -135,7 +135,7 @@ export function ThurinCard({ ens, address, theme = 'thurin' }: ThurinCardProps) 
           target="_blank"
           rel="noopener noreferrer"
         >
-          View on Thurin
+          View on Thurin.id
         </a>
       )}
     </div>
