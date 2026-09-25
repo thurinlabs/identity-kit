@@ -7,7 +7,7 @@ export default defineConfig([
     format: ['esm', 'cjs'],
     dts: true,
     splitting: true,
-    sourcemap: true,
+    sourcemap: false,   // tsup's CJS maps embed the builder's absolute path
     clean: true,
     external: ['react', 'react-dom', 'wagmi', 'viem', '@tanstack/react-query'],
     esbuildOptions(options) {

@@ -26,9 +26,7 @@ export function usePGPProofs(fingerprint: string | undefined | null, armoredKey:
       const keyInfo = await parsePgpKey(armoredKey)
       if (!keyInfo) return { keyInfo: null, proofs: [] }
 
-      // Identify proofs from notations. Drop unrecognized targets (provider
-      // 'unknown') so the card doesn't render "Unknown" badges for platforms
-      // Thurin has no verifier for — matching the explorer's behavior.
+      // Drop notations no provider recognizes: there is nothing to check them against.
       const identified = keyInfo.notations
         .map((n) => identifyProof(n))
         .filter((p): p is NonNullable<typeof p> => p !== null && p.provider !== 'unknown')
@@ -72,10 +70,8 @@ export function usePGPProofs(fingerprint: string | undefined | null, armoredKey:
   return {
     keyInfo: data?.keyInfo ?? null,
     proofs: data?.proofs ?? [],
-    // Report loading whenever a fingerprint is set but its proofs haven't
-    // resolved yet. Using react-query's own isLoading leaves a gap while the
-    // query is enabling (fingerprint just became known), during which the card
-    // would briefly paint without proof badges and then pop them in.
+    // Loading whenever a fingerprint is set but its proofs haven't resolved: react-query's own
+    // isLoading is false for a moment while the query enables, and a UI would flash empty.
     isLoading: !!fingerprint && !!armoredKey && data === undefined,
   }
 }

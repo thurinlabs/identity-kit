@@ -16,7 +16,6 @@ const defaultQueryClient = new QueryClient({
   },
 })
 
-export { chainFor } from './core/contract'
 
 function createDefaultWagmiConfig(rpcUrl: string | undefined, network: NetworkName) {
   const url = rpcUrl || getRegistry(network).defaultRpcUrl

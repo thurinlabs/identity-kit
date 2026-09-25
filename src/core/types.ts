@@ -23,7 +23,7 @@ export interface Attestation {
   verification: PGPVerification | null
 }
 
-/** Why a claim does or doesn't count, in a form a UI can word (see CLAIM_CHECK_LABEL). Since 1.4.0. */
+/** Why a claim does or doesn't count, in a form a UI can word (see CLAIM_CHECK_LABEL). */
 export type ClaimCheckKind =
   | 'verified'
   | 'expired'              // the key's expiry has passed

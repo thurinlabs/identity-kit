@@ -42,9 +42,6 @@ export const KNOWN_KINDS = [
 ] as const
 export type KnownKind = (typeof KNOWN_KINDS)[number]
 
-/** The kinds an identity page shows, in display order: all of them. */
-export const IDENTITY_KINDS: readonly KnownKind[] = KNOWN_KINDS
-
 // ─── thurin.releases: the releases an identity put out ─────────────────────────────────────
 // Each entry names a release by the sha256 of its checksum file (SHA256SUMS), so the chain says
 // "this identity put this out", not only "this key signed it". `thurin record add-release` keeps it.
@@ -177,7 +174,7 @@ export interface RecordReader {
  * The records on one claim, from `recordsOf`, as `{ kind, text }` pairs. `kinds` picks and orders
  * them (full names); `null` keeps every record in the order it was first set.
  */
-export function pickRecords(names: readonly string[], values: readonly string[], kinds: readonly string[] | null = IDENTITY_KINDS): { kind: string; text: string }[] {
+export function pickRecords(names: readonly string[], values: readonly string[], kinds: readonly string[] | null = KNOWN_KINDS): { kind: string; text: string }[] {
   const all = names.map((kind, i) => ({ kind, text: values[i] ?? '' })).filter(r => r.text)
   if (!kinds) return all
   return kinds.flatMap(k => all.filter(r => r.kind === k))
@@ -189,14 +186,14 @@ export function pickRecords(names: readonly string[], values: readonly string[],
  */
 export function pageRecords(names: readonly string[], values: readonly string[]): { kind: string; text: string }[] {
   const all = pickRecords(names, values, null)
-  const ours = IDENTITY_KINDS.flatMap(k => all.filter(r => r.kind === k))
-  return [...ours, ...all.filter(r => !(IDENTITY_KINDS as readonly string[]).includes(r.kind))]
+  const ours = KNOWN_KINDS.flatMap(k => all.filter(r => r.kind === k))
+  return [...ours, ...all.filter(r => !(KNOWN_KINDS as readonly string[]).includes(r.kind))]
 }
 
 /** Read and parse the records on one claim. Pass the kit's REGISTRY_ABI. */
 export async function fetchRecords(
   client: RecordReader, registry: `0x${string}`, abi: unknown,
-  owner: `0x${string}`, index: number | bigint, kinds: readonly string[] | null = IDENTITY_KINDS, opts: { armoredKey?: string } = {},
+  owner: `0x${string}`, index: number | bigint, kinds: readonly string[] | null = KNOWN_KINDS, opts: { armoredKey?: string } = {},
 ): Promise<ParsedRecord[]> {
   const [names, values] = await client.readContract({ address: registry, abi, functionName: 'recordsOf', args: [owner, BigInt(index)] }) as [string[], string[]]
   const out: ParsedRecord[] = []

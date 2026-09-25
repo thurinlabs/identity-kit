@@ -1,7 +1,7 @@
 import { useEnsText } from 'wagmi'
 import { normalize } from 'viem/ens'
 import { useIdentityKitConfig } from '../context'
-import { chainFor } from '../provider'
+import { chainFor } from '../core/contract'
 import { ENS_HINT_KEY, ensHintFor, type EnsHint } from '../core/ensHint'
 
 function safeNormalize(name: string): string | undefined {

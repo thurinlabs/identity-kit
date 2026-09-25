@@ -14,8 +14,8 @@ import type { PGPKeyInfo, PGPVerification } from './types'
  * partial object.
  */
 function pgpConfig(openpgp: typeof import('openpgp')) {
-  // Accept secp256k1 only. Clearing the set would also accept anything openpgp.js adds to it
-  // later for security reasons (terricola, 2026-09-23); removing one entry keeps that policy.
+  // Allow secp256k1 and nothing else: clearing the set would also accept any curve openpgp.js
+  // rejects later for security reasons.
   const rejectCurves = new Set([...(openpgp.config.rejectCurves ?? [])].filter(c => c !== 'secp256k1'))
   return { ...openpgp.config, rejectCurves: rejectCurves as Set<never> }
 }
@@ -176,13 +176,12 @@ export async function parsePgpKey(armoredKey: PgpInput): Promise<PGPKeyInfo | nu
 
 /**
  * Verify a clearsigned message against an armored public key, the way gpg does: the signing
- * key (or subkey) must be valid *now* — bound to this primary, unrevoked, unexpired — and the
+ * key (or subkey) must be valid *now* (bound to this primary, unrevoked, unexpired) and the
  * signature must be sound. We deliberately do not ask openpgp.verify(), which also demands
- * the key was valid at the instant the signature was made. Thurin's update flow tells people
- * to `export-minimal` after editing notations, which keeps only the newest self-certification;
- * when that postdates the signature (Ben's own key, 2026-09-14: notations edited 16 minutes
- * after signing), openpgp.verify() reports "Could not find valid self-signature" for a
- * signature gpg verifies fine. A key that has since been revoked or expired still fails here.
+ * the key was valid at the instant the signature was made. The update flow tells people to
+ * `export-minimal` after editing notations, which keeps only the newest self-certification;
+ * when that postdates the signature, openpgp.verify() reports "Could not find valid
+ * self-signature" for a signature gpg verifies fine. A key that has since been revoked or expired still fails here.
  * These are internals the .d.ts does not expose (the signature packet list, the
  * CRLF-normalised text, LiteralDataPacket.setText); they are stable across openpgp.js 6 and
  * exercised by the real-data tests in attestation.test.ts.
@@ -257,7 +256,7 @@ function revocationOf(sigs: any[]): { at: string | null; compromised: boolean; r
  * that signed. `problem` is the reason a claim stops counting, most important first; `expiresAt`
  * is the earlier of the two expiries, for "expires soon".
  */
-async function keyLife(openpgp: typeof import('openpgp'), key: any, issuer: any, config: any) {
+async function keyLife(key: any, issuer: any, config: any) {
   const now = new Date()
   const signer = issuer && !key.getKeyID().equals(issuer) ? key.subkeys.find((s: any) => s.getKeyID().equals(issuer)) ?? null : key
   const signingKey = signer ? signer.getFingerprint().toUpperCase() : null
@@ -315,7 +314,7 @@ export async function verifyAttestation({
     let sig: Awaited<ReturnType<typeof readSignatureAny>>
     try { sig = await readSignatureAny(openpgp, pgpSignature) }
     catch { return { verified: false, reason: 'Unreadable signature', kind: 'bad-signature' } }
-    const life = await keyLife(openpgp, publicKey, sig.packets[0]?.issuerKeyID ?? null, pgpConfig(openpgp))
+    const life = await keyLife(publicKey, sig.packets[0]?.issuerKeyID ?? null, pgpConfig(openpgp))
     const v = sig.text !== null
       ? await verifyClearsigned({ armoredKey: publicKey.armor(), clearsigned: normalizeInput(pgpSignature) as string })
       : await verifyStatementSignature({ key: publicKey.armor(), signature: pgpSignature, address: ethAddress })
@@ -465,17 +464,6 @@ export async function leanKey(input: PgpInput, { includeEmail = false }: { inclu
       return !authOnly
     })
     return { binary: key.write(), kept, removed, keyNotationEmails, droppedSubkeys }
-  } catch {
-    return null
-  }
-}
-
-/** The signature as a claim stores it: the raw signature packet, from a detached signature or a clearsigned message. */
-export async function leanSignature(input: PgpInput): Promise<Uint8Array | null> {
-  try {
-    const openpgp = await import('openpgp')
-    const { signature } = await readSignatureAny(openpgp, input)
-    return signature.write()
   } catch {
     return null
   }

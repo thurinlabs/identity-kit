@@ -1,7 +1,7 @@
 /**
  * ENS avatars without the tracking pixel. The `avatar` record is a link the name's owner
  * chooses; loading an ordinary https:// link would tell that owner's server the IP and time of
- * everyone who views the card. So only images the owner can't watch load: content-addressed
+ * everyone who views the page. So only images the owner can't watch load: content-addressed
  * ones (IPFS, Arweave, inline data, or an NFT whose metadata and image are content-addressed)
  * through public gateways, and euc.li, ENS Labs' host behind the ENS app's avatar upload
  * (most avatars; ENS Labs sees the view, the name's owner doesn't). Anything else: no avatar.
@@ -13,7 +13,7 @@
  * in 2026), so there is always a fallback. The gateway sees the viewer's IP and the avatar.
  */
 export const IPFS_GATEWAYS = ['https://ipfs.filebase.io/ipfs/', 'https://gateway.pinata.cloud/ipfs/'] as const
-/** The first gateway in IPFS_GATEWAYS (kept for code that imported it before 1.3.6). */
+/** The first gateway in IPFS_GATEWAYS. */
 export const IPFS_GATEWAY: string = IPFS_GATEWAYS[0]
 export const ARWEAVE_GATEWAY = 'https://arweave.net/'
 

@@ -39,7 +39,6 @@
   "peerDependencies": {
     "@tanstack/react-query": ">=5",
     "react": ">=18",
-    "react-dom": ">=18",
     "viem": ">=2",
     "wagmi": ">=2"
   },
@@ -49,13 +48,8 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.56.0",
-    "@testing-library/jest-dom": "^6.6.0",
-    "@testing-library/react": "^16.0.0",
     "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "jsdom": "^25.0.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
     "tsup": "^8.0.0",
     "typescript": "^5.5.0",
     "viem": "^2.21.0",
@@ -65,9 +59,6 @@
   "license": "MIT",
   "peerDependenciesMeta": {
     "react": {
-      "optional": true
-    },
-    "react-dom": {
       "optional": true
     },
     "wagmi": {

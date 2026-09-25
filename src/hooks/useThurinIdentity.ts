@@ -1,7 +1,7 @@
 import { useBlockNumber, useEnsAddress, useEnsName } from 'wagmi'
 import { identityErrorKind, needsRpcProbe, IDENTITY_ERROR_TEXT } from '../core/identityError'
 import { useIdentityKitConfig } from '../context'
-import { chainFor } from '../provider'
+import { chainFor } from '../core/contract'
 import { normalize } from 'viem/ens'
 import { useAttestations } from './useAttestations'
 import { usePGPProofs } from './usePGPProofs'
@@ -99,8 +99,8 @@ export function useThurinIdentity(ensOrAddress: string | undefined | null): Thur
     currentFingerprint,
     pgpKeyInfo,
     proofs,
-    // "Not finished" counts as loading, including queries paused in a background tab: the card
-    // must not render defaults (zeros) for an identity it hasn't looked up yet.
+    // "Not finished" counts as loading, including queries paused in a background tab, so a UI
+    // never renders defaults (zeros) for an identity it hasn't looked up yet.
     isLoading: (!!ensInput && !ensFetched) || claimsLoading || proofsLoading || probing,
     error: errorKind ? new Error(IDENTITY_ERROR_TEXT[errorKind]) : null,
     errorKind,

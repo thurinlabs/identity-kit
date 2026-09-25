@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import * as openpgp from 'openpgp'
-import { leanKey, leanSignature, claimSignature, verifyAttestation, parsePgpKey, statementText, payloadText, signatureEmail } from '../pgp'
+import { leanKey, claimSignature, verifyAttestation, parsePgpKey, statementText, payloadText, signatureEmail } from '../pgp'
 
 // Fixtures made with gpg from a throwaway key (public data only): an email name, a plain name, a
 // revoked name, and signing / encryption / authentication subkeys. `lean-gpg-key.gpg` is gpg's own
@@ -74,8 +74,8 @@ describe('the lean format verifies (gpg interop)', () => {
     const lean = await leanKey(text('lean-full-key.asc'))
     const whole = await verifyAttestation({ pgpPublicKey: lean!.binary, pgpSignature: text('lean-echo-clearsign.asc'), fingerprint: FPR, ethAddress: ADDRESS })
     expect(whole.verified).toBe(true)
-    const sig = await leanSignature(text('lean-echo-clearsign.asc'))
-    const reduced = await verifyAttestation({ pgpPublicKey: lean!.binary, pgpSignature: sig!, fingerprint: FPR, ethAddress: ADDRESS })
+    const sig = (await openpgp.readCleartextMessage({ cleartextMessage: text('lean-echo-clearsign.asc') })).signature.write()
+    const reduced = await verifyAttestation({ pgpPublicKey: lean!.binary, pgpSignature: sig, fingerprint: FPR, ethAddress: ADDRESS })
     expect(reduced.verified).toBe(false)
   })
 
@@ -89,15 +89,6 @@ describe('the lean format verifies (gpg interop)', () => {
     expect(detached!.messageVersion).toBe(1)
     expect(detached!.signature).toEqual(bytes('lean-detached.sig'))   // gpg's exact bytes, old-style header kept
     const r = await verifyAttestation({ pgpPublicKey: key, pgpSignature: detached!.signature, fingerprint: FPR, ethAddress: ADDRESS })
-    expect(r.verified).toBe(true)
-  })
-
-  it('an armored detached signature reduces to the same signature (gpg writes old-style packet headers, openpgp.js new-style; both valid)', async () => {
-    const armored = openpgp.armor(openpgp.enums.armor.signature, bytes('lean-detached.sig'))
-    const sig = (await leanSignature(armored))!
-    expect([0x88, 0x89, 0x8a, 0xc2]).toContain(sig[0])
-    expect(Math.abs(sig.length - bytes('lean-detached.sig').length)).toBeLessThanOrEqual(2)
-    const r = await verifyAttestation({ pgpPublicKey: bytes('lean-gpg-key.gpg'), pgpSignature: sig, fingerprint: FPR, ethAddress: ADDRESS })
     expect(r.verified).toBe(true)
   })
 

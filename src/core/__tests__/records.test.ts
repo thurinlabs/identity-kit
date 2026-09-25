@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const fx = (f: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', f), 'utf8')
-import { kindName, checkKindName, checkRecordValue, recordKind, pickRecords, pageRecords, parseRecord, fetchRecords, addRelease, IDENTITY_KINDS, KNOWN_KINDS } from '../records'
+import { kindName, checkKindName, checkRecordValue, recordKind, pickRecords, pageRecords, parseRecord, fetchRecords, addRelease, KNOWN_KINDS } from '../records'
 
 const BEN = '6E0053911942A889426C1866E34D9266098F7FE7'
 const ZK = '0zk1' + 'qyqxpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s3jn5'   // bech32 charset, real ones are 127 chars
@@ -25,8 +25,7 @@ describe('record kinds and encoding', () => {
     expect(() => checkRecordValue('x'.repeat(1025))).toThrow(/1024/)
   })
   it('shows the release list on the identity page, after the canary', () => {
-    expect(IDENTITY_KINDS).toEqual(KNOWN_KINDS)
-    expect(IDENTITY_KINDS.indexOf('thurin.releases')).toBe(IDENTITY_KINDS.indexOf('thurin.canary') + 1)
+    expect(KNOWN_KINDS.indexOf('thurin.releases')).toBe(KNOWN_KINDS.indexOf('thurin.canary') + 1)
   })
 })
 
