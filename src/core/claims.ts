@@ -72,7 +72,6 @@ export type KeyStanding =
   | { kind: 'verified' | 'not-counted' | 'inactive'; claim: Attestation }
   | { kind: 'none'; claim: null }
 
-/** Where an address's key stands, from `readClaims`. */
 export function keyStanding(claims: readonly Attestation[]): KeyStanding {
   const active = claims.filter(c => !c.revoked)
   const verified = active.filter(c => c.verification?.verified)

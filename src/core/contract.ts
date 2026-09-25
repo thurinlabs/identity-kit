@@ -21,7 +21,7 @@ export const NETWORKS: Record<NetworkName, RegistryDeployment> = {
     chainId: 1,
     address: REGISTRY_ADDRESS,
     explorerUrl: 'https://etherscan.io',
-    defaultRpcUrl: 'https://ethereum.publicnode.com',   // same service as ethereum-rpc.publicnode.com; this hostname resolves on more networks
+    defaultRpcUrl: 'https://ethereum.publicnode.com',   // resolves on more networks than ethereum-rpc.publicnode.com
   },
   sepolia: {
     chainId: 11155111,

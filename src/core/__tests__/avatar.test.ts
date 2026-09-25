@@ -26,7 +26,7 @@ describe('NFT avatars', () => {
       chainId: 1, standard: 'erc721', contract: '0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB', tokenId: 1n,
     })
     expect(parseNftAvatar('https://example.com/nft')).toBeNull()
-    expect(parseNftAvatar('eip155:1/ERC1155:0x495f947276749ce646f68ac8c248420045cb7b5e/7')?.standard).toBe('erc1155')   // uppercase in the wild (sassal.eth)
+    expect(parseNftAvatar('eip155:1/ERC1155:0x495f947276749ce646f68ac8c248420045cb7b5e/7')?.standard).toBe('erc1155')   // uppercase appears in real records
   })
   it('takes the image from inline metadata, only if content-addressed', async () => {
     const meta = (image: string) => 'data:application/json;base64,' + btoa(JSON.stringify({ image }))

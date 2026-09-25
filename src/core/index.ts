@@ -7,7 +7,7 @@ export type { ProofOptions } from './proofs'
 export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID, verifyStatementSignature, statementText, leanKey, claimSignature, signatureEmail, payloadText } from './pgp'
 export type { StrippedKey, LeanKey, PgpInput } from './pgp'
 export {
-  normalizeFingerprint, fingerprintToBytes, bytesToFingerprint, fingerprintHash, keyIdOf, keyIdToBytes,
+  normalizeFingerprint, sameFingerprint, fingerprintToBytes, bytesToFingerprint, fingerprintHash, keyIdOf, keyIdToBytes,
 } from './fingerprint'
 export {
   EIP712_NAME, EIP712_VERSION, AUTHORIZATION_TYPES, registryDomain,

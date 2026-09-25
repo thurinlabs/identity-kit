@@ -9,6 +9,12 @@ export function normalizeFingerprint(input: string): string | null {
   return FINGERPRINT_HEX.test(hex) ? hex : null
 }
 
+/** Same key, whatever the case, spacing, or 0x of either side. Malformed input never matches. */
+export function sameFingerprint(a: string | null | undefined, b: string | null | undefined): boolean {
+  const x = a ? normalizeFingerprint(a) : null
+  return x !== null && x === (b ? normalizeFingerprint(b) : null)
+}
+
 /** Fingerprint → the raw `bytes` argument the registry takes (0x-prefixed, 20 or 32 bytes). */
 export function fingerprintToBytes(fingerprint: string): Hex {
   const hex = normalizeFingerprint(fingerprint)
@@ -21,15 +27,14 @@ export function bytesToFingerprint(bytes: Hex | string): string {
   return bytes.replace(/^0x/i, '').toLowerCase()
 }
 
-/** keccak256 of the raw fingerprint bytes — the `fingerprintHash` the registry indexes by. */
+/** keccak256 of the raw fingerprint bytes: the `fingerprintHash` the registry indexes by. */
 export function fingerprintHash(fingerprint: string): Hex {
   return keccak256(fingerprintToBytes(fingerprint))
 }
 
 /**
- * The long key ID as the `bytes8` the registry indexes by. Per RFC 9580 §5.5.4 it is the
- * low-order 8 bytes of a v4 (20-byte) fingerprint and the high-order 8 bytes of a v6
- * (32-byte) fingerprint — the same value `gpg --keyid-format long` prints.
+ * The long key ID as the registry's `bytes8`: the last 8 bytes of a v4 fingerprint, the first 8 of
+ * a v6 (RFC 9580 §5.5.4), as `gpg --keyid-format long` prints.
  */
 export function keyIdOf(fingerprint: string): Hex {
   const hex = normalizeFingerprint(fingerprint)

@@ -2,12 +2,9 @@ import { namehash, normalize } from 'viem/ens'
 import { normalizeFingerprint } from './fingerprint'
 
 /**
- * The `id.thurin` ENS text record: a name points at the PGP key claimed on the Thurin
- * registry by the address the name resolves to. It is a discovery hint, not part of the
- * trust chain — the name owner set the address, the address signed the claim, so a reader
- * verifies by resolving the name and reading the registry. The record only says where to
- * look. `id.thurin` is a service key under ENSIP-5 (reverse-dot of thurin.id); ENSIP-18
- * says service-key values are bare, so the value is the 40-hex fingerprint, uppercase.
+ * The `id.thurin` ENS text record points a name at the key its address claimed. A hint, not trust:
+ * readers still resolve the name and verify the claim. It's an ENSIP-5 service key (reverse-dot of
+ * thurin.id), so per ENSIP-18 the value is bare: the fingerprint, uppercase.
  */
 export const ENS_HINT_KEY = 'id.thurin' as const
 
@@ -55,9 +52,8 @@ export const ENS_TEXT_RESOLVER_ABI = [
 ] as const
 
 /**
- * The `setText` call that links a name to a claim. The resolver address is not part of it
- * on purpose: look it up at write time (`client.getEnsResolver({ name })`) — on ENSv2 every
- * account has its own resolver, so a cached or hardcoded one is the wrong contract.
+ * The `setText` call that links a name to a claim. Look up the resolver at write time
+ * (`client.getEnsResolver({ name })`): on ENSv2 every account has its own.
  */
 export function ensHintWrite(name: string, fingerprint: string) {
   const normalized = normalize(name)

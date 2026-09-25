@@ -2,11 +2,9 @@
 import { describe, it, expect } from 'vitest'
 import { stripEmailUserIDs, hasEmailUserID, parsePgpKey, verifyAttestation } from '../pgp'
 
-// Real fixtures generated with GnuPG (no expiry, throwaway keys). MIXED has two
-// user IDs — "Alice Example <alice@example.com>" and "thurin" — with a
-// proof@thurin.id notation on the thurin user ID only. SIG is a clearsign of the
-// Thurin attestation message for ADDR by that key. EMAIL_ONLY has a single
-// email user ID.
+// Throwaway GnuPG keys. MIXED has two user IDs, "Alice Example <alice@example.com>" and "thurin",
+// with a proof@thurin.id notation on "thurin" only; SIG is its clearsigned statement for ADDR.
+// EMAIL_ONLY has a single email user ID.
 const FPR = '81E924D80A6209ACDE5CAEE0554BF8A0C7C71AC4'
 const ADDR = '0x00000000000000000000000000000000000000a1'
 const MIXED = `-----BEGIN PGP PUBLIC KEY BLOCK-----

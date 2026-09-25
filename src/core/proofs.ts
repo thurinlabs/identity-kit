@@ -18,8 +18,8 @@ const PROVIDERS: {
     parse: (m) => ({ user: m[1], gistId: m[2] }),
   },
   {
-    // A repository's description — the form an organisation can use, since
-    // gists belong to user accounts only. Same shape as the Codeberg proof.
+    // A repository's description: the form an organisation can use, since gists belong to user
+    // accounts only. Same shape as the Codeberg proof.
     provider: 'github',
     label: 'GitHub',
     pattern: /^https:\/\/github\.com\/([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+)$/i,
@@ -28,8 +28,7 @@ const PROVIDERS: {
   {
     provider: 'dns',
     label: 'DNS',
-    // domain is restricted to a hostname (labels may include underscores for
-    // records like _thurin.example.com); rejects slashes, userinfo, and spaces.
+    // A hostname only; underscores allowed for names like _thurin.example.com.
     pattern: /^dns:([a-z0-9._-]+)\?type=TXT$/i,
     parse: (m) => ({ domain: m[1] }),
   },
@@ -48,8 +47,7 @@ const PROVIDERS: {
   {
     provider: 'mastodon',
     label: 'Mastodon',
-    // instance is restricted to a bare hostname (optional port) so a value
-    // like "mastodon.social@evil.com" can't redirect the lookup elsewhere.
+    // A bare hostname (optional port), so "mastodon.social@evil.com" can't send the lookup elsewhere.
     pattern: /^https:\/\/([a-z0-9.-]+(?::\d+)?)\/@([^/@?#\s]+)$/i,
     parse: (m) => ({ instance: m[1], user: m[2] }),
   },
@@ -114,9 +112,7 @@ async function verifyGitHub(proof: Proof, fingerprint: string): Promise<PGPVerif
     if (!resp.ok) return { verified: false, reason: `GitHub API returned ${resp.status}` }
     const data = await resp.json()
 
-    // A gist is identified solely by its globally-unique ID; the username in
-    // the URL is not authoritative. Confirm the gist owner matches the claimed
-    // account before trusting the token it contains.
+    // A gist URL works under any username, so check the gist's real owner.
     if (data.owner?.login?.toLowerCase() !== proof.user!.toLowerCase()) {
       return { verified: false, reason: 'Gist owner does not match claimed user' }
     }
@@ -140,9 +136,7 @@ async function verifyGitHubRepo(proof: Proof, fingerprint: string): Promise<PGPV
     if (!resp.ok) return { verified: false, reason: `GitHub API returned ${resp.status}` }
     const data = await resp.json()
 
-    // GitHub follows renames and redirects, so the API may answer for a repo
-    // under a different owner than the URL names. Only trust it if the owner
-    // is the account being claimed.
+    // GitHub follows renames, so the API can answer for a repo under another owner.
     if (data.owner?.login?.toLowerCase() !== proof.user!.toLowerCase()) {
       return { verified: false, reason: 'Repository owner does not match claimed account' }
     }
@@ -166,8 +160,7 @@ async function verifyDNS(proof: Proof, fingerprint: string): Promise<PGPVerifica
     const data = await resp.json()
 
     for (const answer of data.Answer || []) {
-      // TXT records only (type 16) — a CNAME or other record in the resolution
-      // chain must not be eligible to match the token.
+      // TXT answers only (type 16): a CNAME in the chain must not match.
       if (answer.type !== 16) continue
       if (answer.data && containsFingerprint(answer.data, fingerprint)) {
         return { verified: true }
@@ -228,8 +221,7 @@ async function verifyFarcaster(
           if (containsFingerprint(text, fingerprint)) {
             return { verified: true }
           }
-          // A short cast-hash prefix can match multiple casts; keep scanning
-          // rather than stopping at the first prefix match without the token.
+          // A short hash prefix can match several casts; keep looking.
         }
       }
 
@@ -267,10 +259,7 @@ async function verifyCodeberg(proof: Proof, fingerprint: string): Promise<PGPVer
 
 async function verifyMastodon(proof: Proof, fingerprint: string): Promise<PGPVerification> {
   try {
-    // The instance host is user-supplied and interpolated into the request URL,
-    // so restrict it to a bare hostname (optional port) before use — otherwise a
-    // value such as "mastodon.social@evil.com" would send the lookup to another
-    // server while still displaying as a legitimate handle.
+    // Checked again: the host goes straight into the request URL.
     if (!proof.instance || !/^[a-z0-9.-]+(?::\d+)?$/i.test(proof.instance)) {
       return { verified: false, reason: 'Invalid Mastodon instance host' }
     }
@@ -312,10 +301,7 @@ const verifiers: Record<string, Verifier> = {
   mastodon: verifyMastodon,
 }
 
-/**
- * Check one proof. The third argument is options; a plain string is still accepted as a
- * Neynar API key.
- */
+/** Check one proof against its platform. `options` may also be a Neynar API key. */
 export async function verifyProof(
   proof: Proof,
   fingerprint: string,

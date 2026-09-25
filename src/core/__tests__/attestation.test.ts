@@ -10,10 +10,8 @@ const read = (f: string) => readFileSync(join(dir, f), 'utf8')
 
 describe('verifyAttestation against real on-chain data', () => {
   it('verifies a key whose only self-certification is NEWER than the attest signature', async () => {
-    // bendoubleu.eth, 2026-09-14: statement signed 13:55 UTC, notations edited 14:11 UTC,
-    // then `export-minimal` kept only the 14:11 self-certification. gpg: good signature.
-    // openpgp.verify() rejects it ("Could not find valid self-signature") because it
-    // judges validity at signing time. Thurin must accept it.
+    // Notations edited after signing, then export-minimal kept only the newer self-certification.
+    // gpg accepts it; openpgp.verify() judges the key at signing time and doesn't.
     const result = await verifyAttestation({
       pgpPublicKey: read('ben-key-newer-selfcert.asc'),
       pgpSignature: read('ben-attestation.asc'),

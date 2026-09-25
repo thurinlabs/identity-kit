@@ -144,6 +144,6 @@ describe('canary verification against the claim key', () => {
     expect(unchecked.data).toMatchObject({ type: 'canary', clearsigned: true, verified: null, date: '2026-09-23' })
     const checked = await parseRecord('thurin.canary', signed, { armoredKey: fx('company-key.asc') })
     expect(checked.valid).toBe(true)
-    expect(checked.data).toMatchObject({ type: 'canary', clearsigned: true, verified: false })   // garbage signature, honestly reported
+    expect(checked.data).toMatchObject({ type: 'canary', clearsigned: true, verified: false })   // garbage signature
   })
 })

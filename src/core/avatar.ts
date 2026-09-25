@@ -1,17 +1,11 @@
 /**
- * ENS avatars without the tracking pixel. The `avatar` record is a link the name's owner
- * chooses; loading an ordinary https:// link would tell that owner's server the IP and time of
- * everyone who views the page. So only images the owner can't watch load: content-addressed
- * ones (IPFS, Arweave, inline data, or an NFT whose metadata and image are content-addressed)
- * through public gateways, and euc.li, ENS Labs' host behind the ENS app's avatar upload
- * (most avatars; ENS Labs sees the view, the name's owner doesn't). Anything else: no avatar.
+ * ENS avatars without the tracking pixel: an ordinary https:// avatar tells the name's owner who
+ * viewed the page. Only images the owner can't watch load: content-addressed ones (IPFS, Arweave,
+ * inline data, an NFT whose metadata and image are content-addressed) through public gateways, and
+ * euc.li, where the ENS app stores uploads (ENS Labs sees the view; the owner doesn't).
  */
 
-/**
- * Public IPFS gateways, tried in order: when an image fails to load, the next one is used.
- * Any single public gateway can stop serving (ipfs.io and dweb.link went "service worker only"
- * in 2026), so there is always a fallback. The gateway sees the viewer's IP and the avatar.
- */
+/** Public IPFS gateways, tried in order when an image fails: any one can stop serving. Each sees the viewer's IP. */
 export const IPFS_GATEWAYS = ['https://ipfs.filebase.io/ipfs/', 'https://gateway.pinata.cloud/ipfs/'] as const
 /** The first gateway in IPFS_GATEWAYS. */
 export const IPFS_GATEWAY: string = IPFS_GATEWAYS[0]

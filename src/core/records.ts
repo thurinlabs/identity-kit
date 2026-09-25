@@ -150,7 +150,7 @@ export async function parseRecord(kind: string, text: string, opts: { armoredKey
       if (!t.startsWith('-----BEGIN PGP MESSAGE-----')) return invalid('Not a PGP message')
       let recipients: number | null = null
       try {
-        const { readMessage } = await import('openpgp')   // lazy, like pgp.ts: a static import breaks under jsdom
+        const { readMessage } = await import('openpgp')   // lazy, as in pgp.ts: openpgp loads only when needed
         recipients = (await readMessage({ armoredMessage: t })).getEncryptionKeyIDs().length
       } catch { return invalid('PGP message does not parse') }
       return { ...base, valid: true, data: { type: 'encrypted', recipients } }
@@ -164,7 +164,6 @@ export async function parseRecord(kind: string, text: string, opts: { armoredKey
   }
 }
 
-/** Minimal client shape: viem's PublicClient has it. */
 /** Anything with viem's `readContract`, such as a viem `PublicClient`. */
 export interface RecordReader {
   readContract(args: any): Promise<unknown>

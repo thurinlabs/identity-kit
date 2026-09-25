@@ -1,17 +1,9 @@
 import type { PGPKeyInfo, PGPVerification } from './types'
 
 /**
- * openpgp.js refuses secp256k1 by default because RFC 9580 does not list the
- * curve — a compatibility choice, not a security one. A secp256k1 PGP key is a
- * valid key (and, incidentally, doubles as an Ethereum key: the address falls out
- * of the same public point). Thurin verifies signatures over any curve openpgp.js
- * can compute; whether a holder reuses such a key as a wallet is their business.
- * In Node, openpgp.js needs the optional `eckey-utils` package for this curve;
- * the browser build does not.
- *
- * The low-level packet/key methods take a *complete* config (they index into
- * it), so this builds one from the library's defaults rather than passing a
- * partial object.
+ * openpgp.js's config, also accepting secp256k1: RFC 9580 leaves that curve out for compatibility,
+ * not security. In Node the curve needs the optional `eckey-utils`. The low-level packet methods
+ * index into a complete config, so this spreads the defaults.
  */
 function pgpConfig(openpgp: typeof import('openpgp')) {
   // Allow secp256k1 and nothing else: clearing the set would also accept any curve openpgp.js
@@ -41,11 +33,7 @@ function algorithmName(keyOrSubkey: any): string {
   }
 }
 
-/**
- * A key or signature as it arrives: armored text, raw bytes, or the `0x…` hex a contract call
- * returns. The registry stores raw bytes (or a clearsigned message as text); pasted gpg output is
- * armored. Callers never have to know which.
- */
+/** A key or signature as armored text, raw bytes, or the `0x…` hex a contract call returns. */
 export type PgpInput = string | Uint8Array
 
 const TEXT_START = 0x2d // '-', every armor and clearsign header starts with it
@@ -105,11 +93,8 @@ export async function parsePgpKey(armoredKey: PgpInput): Promise<PGPKeyInfo | nu
         ? new Date(expiration as number).toISOString()
         : null
 
-    // openpgp does not verify certification signatures when a key is parsed —
-    // it groups them by issuer key ID only. A key's fingerprint also covers
-    // only the primary key packet, not its user IDs or their certifications.
-    // Each self-certification is therefore verified against the primary key
-    // here before its user ID and notations are treated as authoritative.
+    // openpgp groups certifications by issuer key ID without verifying them, and the fingerprint
+    // doesn't cover user IDs, so each self-certification is verified before its name and notations count.
     const userIDs: string[] = []
     const notations: { name: string; value: string }[] = []
     const seen = new Set<string>()
@@ -129,7 +114,7 @@ export async function parsePgpKey(armoredKey: PgpInput): Promise<PGPKeyInfo | nu
             config,
           )
         } catch {
-          continue // signature not made by this key — ignore this certification
+          continue // not made by this key
         }
         userVerified = true
 
@@ -144,9 +129,7 @@ export async function parsePgpKey(armoredKey: PgpInput): Promise<PGPKeyInfo | nu
                   ? n.value
                   : null
             if (value) {
-              // Dedupe by value alone: the same proof target is often present
-              // under both proof@thurin.id and proof@ariadne.id, and should
-              // surface once, not once per namespace.
+              // By value: the same proof often sits under both proof@thurin.id and proof@ariadne.id.
               if (!seen.has(value)) {
                 seen.add(value)
                 notations.push({ name, value })
@@ -175,20 +158,11 @@ export async function parsePgpKey(armoredKey: PgpInput): Promise<PGPKeyInfo | nu
 }
 
 /**
- * Verify a clearsigned message against an armored public key, the way gpg does: the signing
- * key (or subkey) must be valid *now* (bound to this primary, unrevoked, unexpired) and the
- * signature must be sound. We deliberately do not ask openpgp.verify(), which also demands
- * the key was valid at the instant the signature was made. The update flow tells people to
- * `export-minimal` after editing notations, which keeps only the newest self-certification;
- * when that postdates the signature, openpgp.verify() reports "Could not find valid
- * self-signature" for a signature gpg verifies fine. A key that has since been revoked or expired still fails here.
- * These are internals the .d.ts does not expose (the signature packet list, the
- * CRLF-normalised text, LiteralDataPacket.setText); they are stable across openpgp.js 6 and
- * exercised by the real-data tests in attestation.test.ts.
- *
- * Used for attestation statements and for clearsigned records such as `thurin.canary`.
+ * Signature packets over `text`, checked the way gpg does: the signing key or subkey must be valid
+ * now, not at signing time as openpgp.verify() demands. `export-minimal` keeps only the newest
+ * self-certification, and when that postdates the signature openpgp.verify() rejects what gpg
+ * accepts. Uses openpgp.js 6 internals the .d.ts doesn't expose; attestation.test.ts covers them.
  */
-/** Check signature packets over `text` against the key, judging key validity now (see below). */
 async function verifySignedText(openpgp: typeof import('openpgp'), publicKey: any, packets: any[], text: string): Promise<boolean> {
   const { LiteralDataPacket } = openpgp
   const config = pgpConfig(openpgp)
@@ -204,6 +178,7 @@ async function verifySignedText(openpgp: typeof import('openpgp'), publicKey: an
   return false
 }
 
+/** A clearsigned message against a key, judged as gpg would: claims, and records such as `thurin.canary`. */
 export async function verifyClearsigned({ armoredKey, clearsigned }: { armoredKey: PgpInput; clearsigned: string }): Promise<{ verified: boolean; reason?: string; text: string }> {
   try {
     const openpgp = await import('openpgp')
@@ -234,7 +209,8 @@ export async function verifyStatementSignature({ key, signature, address }: { ke
   }
 }
 
-const REVOCATION_REASON: Record<number, string> = { // 0 = "no reason specified", gpg's default: say nothing rather than "(reason: no reason given)"
+// 0 (no reason given, gpg's default) is left unsaid.
+const REVOCATION_REASON: Record<number, string> = {
   1: 'replaced by a newer key', 2: 'compromised', 3: 'no longer used', 32: 'a user ID is no longer valid' }
 
 const iso = (d: Date | number | null | undefined) =>
@@ -367,12 +343,8 @@ function notationEmails(sig: any): string[] {
 }
 
 /**
- * Remove every user ID that contains an email address, keeping the rest (and
- * their self-certifications, so proof notations on a non-email user ID survive).
- * Returns null when nothing would remain — openpgp needs at least one
- * self-certified user ID to verify signatures, so such a key must not be
- * published. The key material and subkeys are untouched; the fingerprint is
- * unchanged.
+ * The key without its email user IDs; the rest keep their self-certifications and notations.
+ * Null when no user ID would remain: openpgp needs one to verify signatures.
  */
 export async function stripEmailUserIDs(armoredKey: PgpInput): Promise<StrippedKey | null> {
   try {
@@ -419,13 +391,9 @@ export interface LeanKey {
 }
 
 /**
- * The key as a claim stores it: raw bytes; email user IDs left out unless
- * `includeEmail`; authentication-only subkeys (SSH) left out, since nobody fetches those from a
- * keyserver. Everything else stays: the primary key, the remaining user IDs, every signing and
- * encryption subkey, and every revocation (so a revoked name or subkey reads as revoked). Like
- * gpg's export-minimal, only the newest self-signature per user ID and subkey is kept and
- * third-party certifications are dropped. The fingerprint doesn't change. Null when no user ID
- * would remain.
+ * The key as a claim stores it, like gpg's export-minimal: raw bytes, the newest self-signature per
+ * user ID and subkey, revocations kept. Email user IDs (unless `includeEmail`) and authentication-only
+ * (SSH) subkeys are left out. Null when no user ID would remain.
  */
 export async function leanKey(input: PgpInput, { includeEmail = false }: { includeEmail?: boolean } = {}): Promise<LeanKey | null> {
   try {
@@ -433,8 +401,6 @@ export async function leanKey(input: PgpInput, { includeEmail = false }: { inclu
     const key: any = await readKeyAny(openpgp, input)
     const kept: string[] = []
     const removed: string[] = []
-    // Like gpg's export-minimal: the newest self-signature per user ID and per subkey, no
-    // third-party certifications. Revocations always stay.
     const newest = (sigs: any[] = []) => sigs.length ? [[...sigs].sort((x: any, y: any) => (y.created?.getTime?.() ?? 0) - (x.created?.getTime?.() ?? 0))[0]] : []
     // A revoked user ID keeps only its revocation (as gpg does): its self-signature adds nothing.
     for (const u of key.users) { u.selfCertifications = u.revocationSignatures?.length ? [] : newest(u.selfCertifications); u.otherCertifications = [] }
@@ -494,10 +460,8 @@ export async function claimSignature({ signature, key, address }: { signature: P
 }
 
 /**
- * The email gpg wrote into a signature, or null. gpg adds a "signer's user ID" when it is told
- * which key to use by an email or name (`-u me@example.com`), or when gpg.conf sets `sender`. It
- * is part of what's signed, so it can't be removed, and a claim keeps its signature on-chain for
- * good. `gpg --disable-signer-uid` leaves it out. Works on a detached signature or a clearsigned text.
+ * The email gpg signed in as the signer's user ID (from `-u me@example.com` or gpg.conf `sender`),
+ * or null. It can't be removed without re-signing; `gpg --disable-signer-uid` leaves it out.
  */
 export async function signatureEmail(signature: PgpInput): Promise<string | null> {
   try {
