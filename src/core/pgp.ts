@@ -1,19 +1,24 @@
-import type { PGPKeyInfo, PGPVerification } from './types'
+import type { PGPKeyInfo, PGPVerification, SubkeyInfo } from './types'
 
 /**
  * openpgp.js's config, also accepting secp256k1: RFC 9580 leaves that curve out for compatibility,
  * not security. In Node the curve needs the optional `eckey-utils`. The low-level packet methods
  * index into a complete config, so this spreads the defaults.
  */
-function pgpConfig(openpgp: typeof import('openpgp')) {
+export function pgpConfig(openpgp: typeof import('openpgp')) {
   // Allow secp256k1 and nothing else: clearing the set would also accept any curve openpgp.js
   // rejects later for security reasons.
   const rejectCurves = new Set([...(openpgp.config.rejectCurves ?? [])].filter(c => c !== 'secp256k1'))
   return { ...openpgp.config, rejectCurves: rejectCurves as Set<never> }
 }
 
+/** The newest of a set of signatures, by creation time. */
+export function newestSignature(sigs: any[] = []): any {
+  return [...sigs].sort((x, y) => (y.created?.getTime?.() ?? 0) - (x.created?.getTime?.() ?? 0))[0]
+}
+
 /** Human-readable algorithm for a key or subkey packet: "Ed25519", "Cv25519", "RSA 4096", "NIST P-256", … */
-function algorithmName(keyOrSubkey: any): string {
+export function algorithmName(keyOrSubkey: any): string {
   try {
     const info = keyOrSubkey.getAlgorithmInfo() as { algorithm: string; bits?: number; curve?: string }
     const curve = (info.curve || '').toLowerCase()
@@ -56,7 +61,7 @@ function normalizeInput(input: PgpInput): string | Uint8Array {
   return input
 }
 
-async function readKeyAny(openpgp: typeof import('openpgp'), input: PgpInput) {
+export async function readKeyAny(openpgp: typeof import('openpgp'), input: PgpInput) {
   const v = normalizeInput(input)
   return typeof v === 'string' ? openpgp.readKey({ armoredKey: v }) : openpgp.readKey({ binaryKey: v })
 }
@@ -145,13 +150,27 @@ export async function parsePgpKey(armoredKey: PgpInput): Promise<PGPKeyInfo | nu
       }
     }
 
-    const subkeys = key.subkeys.map((sk: any) => ({
-      algorithm: algorithmName(sk),
-      created: sk.keyPacket.created?.toISOString() ?? null,
-      fingerprint: sk.getFingerprint().toUpperCase(),
+    const now = new Date()
+    const subkeys = await Promise.all(key.subkeys.map(async (sk: any) => {
+      const flags = newestSignature(sk.bindingSignatures)?.keyFlags?.[0] ?? 0
+      const usage: SubkeyInfo['usage'] = []
+      if (flags & 0x02) usage.push('sign')
+      if (flags & 0x0c) usage.push('encrypt')
+      if (flags & 0x20) usage.push('auth')
+      const exp = await sk.getExpirationTime(now, config).catch(() => null)
+      const valid = await sk.verify(now, config).then(() => true, () => false)
+      return {
+        algorithm: algorithmName(sk),
+        created: sk.keyPacket.created?.toISOString() ?? null,
+        fingerprint: sk.getFingerprint().toUpperCase(),
+        usage,
+        expires: exp && exp !== Infinity ? new Date(exp as number).toISOString() : null,
+        valid,
+      }
     }))
+    const canEncrypt = await key.getEncryptionKey(undefined, now, undefined, config).then(() => true, () => false)
 
-    return { fingerprint, userIDs, algorithm, created, expires, notations, subkeys }
+    return { fingerprint, userIDs, algorithm, created, expires, notations, subkeys, canEncrypt }
   } catch {
     return null
   }
@@ -554,13 +573,13 @@ export async function sshKeys(input: PgpInput): Promise<SshKey[]> {
     const now = new Date()
     try { await key.verifyPrimaryKey(now, undefined, config) } catch { return [] }
 
-    const newest = (sigs: any[] = []) => [...sigs].sort((x, y) => (y.created?.getTime?.() ?? 0) - (x.created?.getTime?.() ?? 0))[0]
     const candidates: { packet: any; flags: number }[] = []
-    const primarySig = newest(key.directSignatures)?.keyFlags ? newest(key.directSignatures) : (await key.getPrimaryUser(now, undefined, config)).selfCertification
+    const direct = newestSignature(key.directSignatures)
+    const primarySig = direct?.keyFlags ? direct : (await key.getPrimaryUser(now, undefined, config)).selfCertification
     candidates.push({ packet: key.keyPacket, flags: primarySig?.keyFlags?.[0] ?? 0 })
     for (const sk of key.subkeys) {
       try { await sk.verify(now, config) } catch { continue }
-      candidates.push({ packet: sk.keyPacket, flags: newest(sk.bindingSignatures)?.keyFlags?.[0] ?? 0 })
+      candidates.push({ packet: sk.keyPacket, flags: newestSignature(sk.bindingSignatures)?.keyFlags?.[0] ?? 0 })
     }
 
     const out: SshKey[] = []

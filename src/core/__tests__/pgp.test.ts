@@ -21,6 +21,7 @@ vi.mock('openpgp', () => ({
     getFingerprint: () => 'ae3aabc506cbaaa34d744fd2886704ebb2640781',
     keyPacket: { algorithm: 'eddsa', created: new Date(0) },
     getExpirationTime: async () => Infinity,
+    getEncryptionKey: async () => { throw new Error('no encryption key') },
     users: [
       {
         userID: { userID: 'Alice <alice@example.com>' },

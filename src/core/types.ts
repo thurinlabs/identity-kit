@@ -61,12 +61,20 @@ export interface PGPKeyInfo {
   expires: string | null
   notations: Notation[]
   subkeys: SubkeyInfo[]
+  /** A key or subkey that can take encrypted messages is valid now. */
+  canEncrypt: boolean
 }
 
 export interface SubkeyInfo {
   algorithm: string
   created: string | null
   fingerprint: string
+  /** What its newest binding signature allows. */
+  usage: ('sign' | 'encrypt' | 'auth')[]
+  /** ISO, or null if it doesn't expire. */
+  expires: string | null
+  /** Usable now: bound, not expired, not revoked. */
+  valid: boolean
 }
 
 export interface Notation {

@@ -23,6 +23,8 @@ export type {
 } from './types'
 export { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry, isNetworkName, chainFor } from './contract'
 export { readClaims, keyStanding, findOwners, CLAIM_LIMIT } from './claims'
+export { encryptionKeyFor, encryptRefusalText, keyChangedText, encryptTo } from './encrypt'
+export type { EncryptionKey, EncryptionKeyResult, EncryptRefusal } from './encrypt'
 export { CONTRACT_ERROR_TEXT, contractErrorName, contractErrorText } from './contractErrors'
 export type { ClaimReader, KeyStanding } from './claims'
 export {
