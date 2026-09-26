@@ -481,3 +481,102 @@ export async function payloadText(input: PgpInput, kind: 'key' | 'signature'): P
     return null
   }
 }
+
+export interface SshKey {
+  /** An `authorized_keys` line without a comment: `ssh-ed25519 AAAA…`. */
+  line: string
+  /** As `ssh-keygen -l` shows it: `SHA256:…`. */
+  sha256: string
+  /** The PGP key or subkey it came from. */
+  fingerprint: string
+}
+
+const AUTH_FLAG = 0x20
+
+function sshString(bytes: Uint8Array): Uint8Array {
+  const out = new Uint8Array(4 + bytes.length)
+  new DataView(out.buffer).setUint32(0, bytes.length)
+  out.set(bytes, 4)
+  return out
+}
+
+function sshMpint(bytes: Uint8Array): Uint8Array {
+  let i = 0
+  while (i < bytes.length - 1 && bytes[i] === 0) i++
+  const b = bytes.subarray(i)
+  return sshString(b[0] & 0x80 ? new Uint8Array([0, ...b]) : b)
+}
+
+function sshBlob(p: any): { type: string; blob: Uint8Array<ArrayBuffer> } | null {
+  const text = (s: string) => new TextEncoder().encode(s)
+  const join = (...parts: Uint8Array[]): Uint8Array<ArrayBuffer> => {
+    const out = new Uint8Array(parts.reduce((n, x) => n + x.length, 0))
+    let o = 0
+    for (const x of parts) { out.set(x, o); o += x.length }
+    return out
+  }
+  const { publicParams: pp } = p
+  switch (p.algorithm) {
+    case 1: case 3: // RSA
+      return { type: 'ssh-rsa', blob: join(sshString(text('ssh-rsa')), sshMpint(pp.e), sshMpint(pp.n)) }
+    case 22: // EdDSA (v4): Q is 0x40 then the 32-byte key
+      if (pp.oid?.getName?.() !== 'ed25519Legacy' || pp.Q?.length !== 33) return null
+      return { type: 'ssh-ed25519', blob: join(sshString(text('ssh-ed25519')), sshString(pp.Q.subarray(1))) }
+    case 27: // Ed25519 (v6)
+      return { type: 'ssh-ed25519', blob: join(sshString(text('ssh-ed25519')), sshString(pp.A)) }
+    case 19: { // ECDSA on the NIST curves only; OpenSSH has no brainpool or secp256k1
+      const curve = { nistP256: 'nistp256', nistP384: 'nistp384', nistP521: 'nistp521' }[pp.oid?.getName?.() as string]
+      if (!curve) return null
+      const type = `ecdsa-sha2-${curve}`
+      return { type, blob: join(sshString(text(type)), sshString(text(curve)), sshString(pp.Q)) }
+    }
+    default: // Ed448, DSA, and the rest: OpenSSH can't use them
+      return null
+  }
+}
+
+function base64(bytes: Uint8Array): string {
+  let s = ''
+  for (const b of bytes) s += String.fromCharCode(b)
+  return btoa(s)
+}
+
+/**
+ * The key's SSH keys: every authentication key or subkey that is valid now (not expired, not
+ * revoked), in a type OpenSSH accepts. What `gpg --export-ssh-key` prints, but every one, not only
+ * the newest. Empty when there are none.
+ */
+export async function sshKeys(input: PgpInput): Promise<SshKey[]> {
+  try {
+    const openpgp = await import('openpgp')
+    const config = pgpConfig(openpgp)
+    const key: any = await readKeyAny(openpgp, input)
+    const now = new Date()
+    try { await key.verifyPrimaryKey(now, undefined, config) } catch { return [] }
+
+    const newest = (sigs: any[] = []) => [...sigs].sort((x, y) => (y.created?.getTime?.() ?? 0) - (x.created?.getTime?.() ?? 0))[0]
+    const candidates: { packet: any; flags: number }[] = []
+    const primarySig = newest(key.directSignatures)?.keyFlags ? newest(key.directSignatures) : (await key.getPrimaryUser(now, undefined, config)).selfCertification
+    candidates.push({ packet: key.keyPacket, flags: primarySig?.keyFlags?.[0] ?? 0 })
+    for (const sk of key.subkeys) {
+      try { await sk.verify(now, config) } catch { continue }
+      candidates.push({ packet: sk.keyPacket, flags: newest(sk.bindingSignatures)?.keyFlags?.[0] ?? 0 })
+    }
+
+    const out: SshKey[] = []
+    for (const { packet, flags } of candidates) {
+      if (!(flags & AUTH_FLAG)) continue
+      const ssh = sshBlob(packet)
+      if (!ssh) continue
+      const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', ssh.blob))
+      out.push({
+        line: `${ssh.type} ${base64(ssh.blob)}`,
+        sha256: `SHA256:${base64(digest).replace(/=+$/, '')}`,
+        fingerprint: packet.getFingerprint().toUpperCase(),
+      })
+    }
+    return out
+  } catch {
+    return []
+  }
+}

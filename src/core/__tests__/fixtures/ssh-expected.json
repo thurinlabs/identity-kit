@@ -1,0 +1,45 @@
+{
+  "ed25519": [
+    {
+      "line": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKCQ4DBxX8GcQLcbKtj8G9jKxNS99mBWKJIkXVDhGFSo",
+      "sha256": "SHA256:veIQPGe1jngynTYp12ClnxRDY3Cbv3FECvc+86FBwiI",
+      "fingerprint": "49A5E6E1D0EB3C1ACABE8C0F5C03C30ECDAF9BD1"
+    }
+  ],
+  "rsa3072": [
+    {
+      "line": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC5ciELnho9Dx0w89GuuT+DMywpjFKAZs7HidBerc950EXp4po5Lqul7yGINr0AtfEBOW1Fy76mZMPSjD2mjirTTPTCH1brYqxNd82ETD6PUBH7Vm/a5r6leqs8A8Wf5eQTUtQezoy2nlkji5rU4PVkjtqzlGNvB8Y5c1csREmmXwn13YbbAT9DWhz6+GwWw3afyqLPFqOnlmvHHBorZozrWAhq7JhZ0yFkYwyYYoJEZP3oZRnuwO82nfNbkls73GfhEoZUiS4GPWan/A0WU/RffJqhXhgOmhhDeQAg0jvKb6K8i+syj1t3o3fv6Pf2uRQvuE9QnuPih+zxTNoJiY1Nt+EI0p3Ukn0RxQBLBMP2AM3IbAAt6XathpFkaGN8f5S+KQ1HSYx52MPQu3Aqhzzc5bZBcL0Z+xVeQK8/IG1ptHJuL/8N/2MFRDjCuURSrzDnjTORpJM7uNm9neTdSZTsgU8nfAUWco9fJJYNlHLpTYvozhv45ZO8hZMbk3u4eM8=",
+      "sha256": "SHA256:4E8GgkM+H8dSc/Y9yXiC7GTvTiEsgvS8acUgp3xm/r4",
+      "fingerprint": "3AC63891164BDB3B9BA3F0C713A51B7A51389977"
+    }
+  ],
+  "p256": [
+    {
+      "line": "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBA/fvabwlMT0Am7Ewwt9zriY82Bf5aiFuqcHdXWfasvwTnirYNqgSqJKzGwuTtr3qcATIFgQ2WPSiN6ZcGsjzow=",
+      "sha256": "SHA256:bGostV1/qNiyVv6Rcs4a6HiddrR19cDBiekSWSU0Jug",
+      "fingerprint": "B083A1F683C9ADC5A20C3FE97F85E44A8088148D"
+    }
+  ],
+  "none": [],
+  "two": [
+    {
+      "line": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHnpmogNbM/+eyST2X/nV0oSZFNkXPGMGBM+vcAInUrK",
+      "sha256": "SHA256:4sx+FUnbJfNxc7KThCFhgyYdhnead42N3+OJDDL6fv8",
+      "fingerprint": "FEAC1431F25401CE20869FB94AE95E208728B1E6"
+    },
+    {
+      "line": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDDbaKh7DakOfZYxYt3k2tWb3ApANs5W9l0pRlUbtKNu1s+Ur8OyVmytcy4J742wvFD8W+5MaqngxwK6s0kXiTh2wCZ77qNUnSQE+j+vv5xBLdDmVBlUsjtUjGkoAliYbHIT6d3A4OkMGnicUz4T9rgAhigb7gCvRrk3ItBdI90uhGptfkTnxT7kvkU9/HLo8aqfbIjcX5FDEYzwmO+LsGcG46cEI5dnd0JPY/VXCNOvgjCGT4A5e/qwlIIVCYVhKTzWwfzP6CAlxmVUKDK57NUy5J4/iQYXuBe0L7Gf8tIp/6g8txB3GmTOVp70lohKOVu/8kG2eUefHvP1AJMiL2FtsLy5yfpwtPzm2TwWUS+7MUAtFogcj18dGNhlN3BmsAq5BTlyT0p0hjh3BnjbznlhzDZgD1oUuQn7Q5dve2CDoOpECjusZWROdtKnvhNzAZwpbrYxozWJy2071ZIIo7fmfJLWh4DRIVj3LZ+e+rCLAQbozwXfXD0TGMf09YZPAU=",
+      "sha256": "SHA256:dPkvOOCR9dr1kusBhaPGvdH8orwAmF5fSi2XbK3DClk",
+      "fingerprint": "F1CA1995CC771564A6322C32AE2A7E9DDA59F67F"
+    }
+  ],
+  "primary": [
+    {
+      "line": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDuYQ6U6SH4xvNfYUa+BH+SV6mesWeLklg8aG6sWMP0Z",
+      "sha256": "SHA256:iai8z4N9FXhjkYTgVEfE9nXzClwTkkMsaOksJM5d53Q",
+      "fingerprint": "000FC1124A1FD1793773F6334CF053C28E508C9D"
+    }
+  ],
+  "expired": [],
+  "revoked": []
+}

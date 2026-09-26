@@ -4,8 +4,8 @@
  */
 export { identifyProof, verifyProof, displayUrl, proofHref, proofSecondaryHref, FARCASTER_HUB } from './proofs'
 export type { ProofOptions } from './proofs'
-export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID, verifyStatementSignature, statementText, leanKey, claimSignature, signatureEmail, payloadText } from './pgp'
-export type { StrippedKey, LeanKey, PgpInput } from './pgp'
+export { parsePgpKey, verifyAttestation, verifyClearsigned, stripEmailUserIDs, hasEmailUserID, verifyStatementSignature, statementText, leanKey, claimSignature, signatureEmail, payloadText, sshKeys } from './pgp'
+export type { StrippedKey, LeanKey, PgpInput, SshKey } from './pgp'
 export {
   normalizeFingerprint, sameFingerprint, fingerprintToBytes, bytesToFingerprint, fingerprintHash, keyIdOf, keyIdToBytes,
 } from './fingerprint'

@@ -46,7 +46,7 @@ The rest, all covered in the [docs](https://docs.thurin.id/#/sdk):
 - **Claim history:** `claimFates`, `claimFateText`, `expiresSoon`, `expiresSoonText`.
 - **Records:** `kindName`, `checkKindName`, `checkRecordValue`, `fetchRecords`, `pickRecords`, `pageRecords`, `parseRecord`, and the `thurin.releases` helpers.
 - **Permissions:** `attestTypedData`, `reattestTypedData`, `updateKeyTypedData`, `revokeTypedData`, `setRecordTypedData`, `markCompromisedTypedData`, for the registry's `…For` writes. To mark an already revoked claim compromised, sign `markCompromisedTypedData` alone.
-- **Keys:** `parsePgpKey`, `leanKey`, `claimSignature`, `stripEmailUserIDs`, fingerprint and key-ID helpers.
+- **Keys:** `parsePgpKey`, `leanKey`, `claimSignature`, `sshKeys` (SSH keys as `authorized_keys` lines), `stripEmailUserIDs`, fingerprint and key-ID helpers.
 - **ENS:** `fetchEnsHint`, `ensHintWrite` for the `id.thurin` record.
 - **Avatars:** `avatarUrl`, `avatarFallbacks`, only from places that can't see the viewer: IPFS, Arweave, inline data, a content-addressed NFT, or `euc.li`.
 
