@@ -80,7 +80,7 @@ export function keyProblemText(v: PGPVerification, formatDate: (iso: string | nu
   const t = (kind: ClaimCheckKind, sentence: string, fix: string): ClaimCheckText => ({ kind, label: CLAIM_CHECK_LABEL[kind], sentence, fix })
   switch (v.kind) {
     case 'expired':
-      return t('expired', `This key expired on ${at}, so a claim with it wouldn't count.`, 'Extend it (gpg --quick-set-expire), then export it and sign again.')
+      return t('expired', `This key expired on ${at}, so a claim with it wouldn't count.`, 'Extend it (gpg --quick-set-expire), then export it again.')
     case 'signing-key-expired':
       return t('signing-key-expired', `The subkey that signed (${shortFingerprint(v.signingKey)}) expired on ${at}.`, 'Extend that subkey, or sign with a current one.')
     case 'revoked':
