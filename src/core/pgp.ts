@@ -386,14 +386,12 @@ export interface LeanKey {
   removed: string[]
   /** Emails in notations on the key itself (not on a name), which can't be left out: refuse to publish these. */
   keyNotationEmails: string[]
-  /** Fingerprints of authentication-only subkeys left out. */
-  droppedSubkeys: string[]
 }
 
 /**
  * The key as a claim stores it, like gpg's export-minimal: raw bytes, the newest self-signature per
- * user ID and subkey, revocations kept. Email user IDs (unless `includeEmail`) and authentication-only
- * (SSH) subkeys are left out. Null when no user ID would remain.
+ * user ID and subkey, revocations kept. Email user IDs are left out unless `includeEmail`. Every subkey
+ * stays, authentication (SSH) ones included. Null when no user ID would remain.
  */
 export async function leanKey(input: PgpInput, { includeEmail = false }: { includeEmail?: boolean } = {}): Promise<LeanKey | null> {
   try {
@@ -419,17 +417,7 @@ export async function leanKey(input: PgpInput, { includeEmail = false }: { inclu
     const keyNotationEmails = includeEmail ? [] : key.directSignatures.flatMap(notationEmails)
     for (const sk of key.subkeys) sk.bindingSignatures = newest(sk.bindingSignatures)
 
-    const { keyFlags } = openpgp.enums
-    const droppedSubkeys: string[] = []
-    key.subkeys = key.subkeys.filter((sk: any) => {
-      const binding = [...(sk.bindingSignatures ?? [])].sort((a: any, b: any) => (b.created?.getTime?.() ?? 0) - (a.created?.getTime?.() ?? 0))[0]
-      const flags = binding?.keyFlags?.[0] ?? 0
-      const authOnly = (flags & keyFlags.authentication) !== 0
-        && (flags & (keyFlags.signData | keyFlags.encryptCommunication | keyFlags.encryptStorage | keyFlags.certifyKeys)) === 0
-      if (authOnly) droppedSubkeys.push(sk.getFingerprint().toUpperCase())
-      return !authOnly
-    })
-    return { binary: key.write(), kept, removed, keyNotationEmails, droppedSubkeys }
+    return { binary: key.write(), kept, removed, keyNotationEmails }
   } catch {
     return null
   }

@@ -7,7 +7,7 @@ import { leanKey, claimSignature, verifyAttestation, parsePgpKey, statementText,
 
 // Fixtures made with gpg from a throwaway key (public data only): an email name, a plain name, a
 // revoked name, and signing / encryption / authentication subkeys. `lean-gpg-key.gpg` is gpg's own
-// lean export (export-minimal, keep-uid 'uid !~ @', drop-subkey 'usage = a'); `lean-detached.sig`
+// lean export (export-minimal, keep-uid 'uid !~ @'); `lean-detached.sig`
 // is `printf '%s' <statement> | gpg --detach-sign --textmode`; `lean-echo-clearsign.asc` is
 // `echo <statement> | gpg --clearsign` (signs a trailing line break).
 const dir = join(__dirname, 'fixtures')
@@ -18,16 +18,15 @@ const FPR = text('lean-fingerprint.txt').trim()
 const ADDRESS = '0x1111111111111111111111111111111111111111'
 
 describe('leanKey', () => {
-  it('keeps the fingerprint, the plain name, signing + encryption subkeys, and the revocation; drops the email name and the auth subkey', async () => {
+  it('keeps the fingerprint, the plain name, every subkey (signing, encryption, SSH), and the revocation; drops the email name', async () => {
     const lean = await leanKey(text('lean-full-key.asc'))
     expect(lean).not.toBeNull()
     expect(lean!.removed).toEqual(['Lean Test <lean@example.com>'])
     expect(lean!.kept).toContain('Lean Test')
-    expect(lean!.droppedSubkeys).toHaveLength(1)
 
     const key: any = await openpgp.readKey({ binaryKey: lean!.binary })
     expect(key.getFingerprint().toUpperCase()).toBe(FPR)
-    expect(key.subkeys).toHaveLength(2)
+    expect(key.subkeys).toHaveLength(3)
     const old = key.users.find((u: any) => u.userID?.userID === 'Old Name')
     expect(old?.revocationSignatures?.length).toBeGreaterThan(0)
     expect(key.users.some((u: any) => /@/.test(u.userID?.userID ?? ''))).toBe(false)
@@ -37,7 +36,7 @@ describe('leanKey', () => {
     const lean = await leanKey(text('lean-full-key.asc'))
     const gpgLean = bytes('lean-gpg-key.gpg')
     expect(Math.abs(lean!.binary.length - gpgLean.length)).toBeLessThan(16)
-    expect(lean!.binary.length).toBeLessThan(text('lean-full-key.asc').length * 0.5)
+    expect(lean!.binary.length).toBeLessThan(text('lean-full-key.asc').length * 0.6)
   })
 
   it('keeps the email name when asked', async () => {
