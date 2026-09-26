@@ -4,7 +4,7 @@ import * as openpgp from 'openpgp'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { verifyAttestation } from '../pgp'
-import { claimCheckText, claimFates, claimFateText, expiresSoon, expiresSoonText, formatClaimDate } from '../claimStatus'
+import { claimCheckText, keyProblemText, claimFates, claimFateText, expiresSoon, expiresSoonText, formatClaimDate } from '../claimStatus'
 
 // Keys made here, dated in the past, so every way a real claim stops counting can be produced
 // without fixtures: expired key, expired signing subkey, revoked (plain / compromised), revoked subkey.
@@ -158,5 +158,14 @@ describe('claimFates: revoked vs replaced', () => {
     expect(claimFateText(fates.get(0)!)).toBe(`Revoked by its owner on ${formatClaimDate(150)} (compromised).`)
     expect(claimFateText(fates.get(3)!)).toBe(`Revoked by its owner on ${formatClaimDate(400)}.`)
     expect(claimFateText(fates.get(2)!)).toBeNull()
+  })
+})
+
+describe('keyProblemText', () => {
+  it('words key problems for a key about to be published, and leaves signature problems alone', () => {
+    expect(keyProblemText({ verified: false, kind: 'expired', at: '2026-01-02T00:00:00Z' })).toMatchObject({ label: 'key expired', fix: expect.stringMatching(/quick-set-expire/) })
+    expect(keyProblemText({ verified: false, kind: 'unsupported', algorithm: 'DSA 2048' })?.sentence).toMatch(/DSA 2048/)
+    expect(keyProblemText({ verified: false, kind: 'bad-signature' })).toBeNull()
+    expect(keyProblemText({ verified: true, kind: 'verified' })).toBeNull()
   })
 })

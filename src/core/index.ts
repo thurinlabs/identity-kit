@@ -23,13 +23,14 @@ export type {
 } from './types'
 export { REGISTRY_ADDRESS, REGISTRY_ABI, NETWORKS, getRegistry, isNetworkName, chainFor } from './contract'
 export { readClaims, keyStanding, findOwners, CLAIM_LIMIT } from './claims'
+export { CONTRACT_ERROR_TEXT, contractErrorName, contractErrorText } from './contractErrors'
 export type { ClaimReader, KeyStanding } from './claims'
 export {
   MAX_RECORD_BYTES, MAX_KIND_BYTES, KNOWN_KINDS, kindName, checkKindName, checkRecordValue, pickRecords, pageRecords,
   parseReleases, addRelease, renderReleases, parseRecord, fetchRecords,
 } from './records'
 export type { KnownKind, ParsedRecord, RecordData, ReleaseEntry, ReleasesRecord, RecordReader } from './records'
-export { CLAIM_CHECK_LABEL, claimCheckText, formatClaimDate, expiresSoon, expiresSoonText, claimFates, claimFateText } from './claimStatus'
+export { CLAIM_CHECK_LABEL, claimCheckText, keyProblemText, formatClaimDate, expiresSoon, expiresSoonText, claimFates, claimFateText } from './claimStatus'
 export type { ClaimCheckText, ClaimFate } from './claimStatus'
 export { avatarUrl, avatarFallbacks, parseNftAvatar, nftAvatarImage, NFT_AVATAR_ABI, IPFS_GATEWAY, IPFS_GATEWAYS, ARWEAVE_GATEWAY } from './avatar'
 export type { NftAvatar } from './avatar'

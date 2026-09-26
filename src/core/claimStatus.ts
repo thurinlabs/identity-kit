@@ -71,6 +71,31 @@ export function claimCheckText(v: PGPVerification, formatDate: (iso: string | nu
   }
 }
 
+/**
+ * What's wrong with a key before it's published, when the problem is the key and not the signature;
+ * null otherwise. For the attest screen and CLI, where claimCheckText's claim wording doesn't fit.
+ */
+export function keyProblemText(v: PGPVerification, formatDate: (iso: string | null | undefined) => string = formatClaimDate): ClaimCheckText | null {
+  const at = formatDate(v.at)
+  const t = (kind: ClaimCheckKind, sentence: string, fix: string): ClaimCheckText => ({ kind, label: CLAIM_CHECK_LABEL[kind], sentence, fix })
+  switch (v.kind) {
+    case 'expired':
+      return t('expired', `This key expired on ${at}, so a claim with it wouldn't count.`, 'Extend it (gpg --quick-set-expire), then export it and sign again.')
+    case 'signing-key-expired':
+      return t('signing-key-expired', `The subkey that signed (${shortFingerprint(v.signingKey)}) expired on ${at}.`, 'Extend that subkey, or sign with a current one.')
+    case 'revoked':
+      return t('revoked', `This key was revoked on ${at}${v.revocationReason ? ` (reason: ${v.revocationReason})` : ''}.`, 'Use a current key.')
+    case 'compromised':
+      return t('compromised', `This key was revoked as compromised on ${at}.`, 'Use a new key.')
+    case 'signing-key-revoked':
+      return t('signing-key-revoked', `The subkey that signed was revoked on ${at}.`, 'Sign with a current subkey.')
+    case 'unsupported':
+      return t('unsupported', `This key uses an algorithm Thurin doesn't check${v.algorithm ? ` (${v.algorithm})` : ''}, so no lookup would vouch for the claim.`, 'Use an Ed25519 or RSA key.')
+    default:
+      return null
+  }
+}
+
 /** Days until a verified claim's key (or signing subkey) expires, when that is within `withinDays`. */
 export function expiresSoon(v: PGPVerification | null | undefined, now: number = Date.now(), withinDays = 30): { days: number; at: string } | null {
   if (!v?.verified || !v.expiresAt) return null
