@@ -12,11 +12,12 @@ export {
 export {
   EIP712_NAME, EIP712_VERSION, AUTHORIZATION_TYPES, registryDomain,
   attestTypedData, reattestTypedData, updateKeyTypedData, revokeTypedData, setRecordTypedData, markCompromisedTypedData,
-  authorizationDigest, recordKind, REVOKE_REASONS, OWNER_REVOKE_REASONS,
+  authorizationDigest, recordKind, REVOKE_REASONS, OWNER_REVOKE_REASONS, permissionSigned,
 } from './authorization'
 export type {
   AuthorizationAction, AttestAuthorization, ReattestAuthorization, UpdateKeyAuthorization,
   RevokeAuthorization, SetRecordAuthorization, MarkCompromisedAuthorization, RevokeReason,
+  PermissionReader, PermissionCheck,
 } from './authorization'
 export type {
   Attestation, PGPVerification, ClaimCheckKind, PGPKeyInfo, SubkeyInfo, Notation, Proof,

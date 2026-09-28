@@ -1,4 +1,4 @@
-import { hashTypedData, keccak256, stringToHex, type Hex, type TypedDataDomain } from 'viem'
+import { hashTypedData, keccak256, stringToHex, recoverTypedDataAddress, isErc6492Signature, type Hex, type TypedDataDomain } from 'viem'
 import { fingerprintToBytes } from './fingerprint'
 
 /**
@@ -161,6 +161,51 @@ export function markCompromisedTypedData(chainId: number, registry: Hex, a: Mark
 /** The digest the registry recovers the signer from. */
 export function authorizationDigest(typedData: ReturnType<typeof attestTypedData | typeof reattestTypedData | typeof updateKeyTypedData | typeof revokeTypedData | typeof setRecordTypedData | typeof markCompromisedTypedData>): Hex {
   return hashTypedData(typedData as any)
+}
+
+/** Any client with viem's `getCode` and `readContract` (a viem PublicClient, or a stub in tests). */
+export interface PermissionReader {
+  getCode(args: { address: Hex }): Promise<Hex | undefined>
+  readContract(args: any): Promise<unknown>
+}
+
+export type PermissionCheck = { ok: true } | { ok: false; reason: string; signer?: Hex }
+
+const ERC1271_MAGIC = '0x1626ba7e'
+const ERC1271_ABI = [{
+  type: 'function', name: 'isValidSignature', stateMutability: 'view',
+  inputs: [{ name: 'hash', type: 'bytes32' }, { name: 'signature', type: 'bytes' }],
+  outputs: [{ name: '', type: 'bytes4' }],
+}] as const
+
+/**
+ * Is `signature` a permission from `owner`? Judged the way the registry judges it: a plain signature
+ * from the owner's key (any address, EIP-7702 accounts included), else, for an account with code (a
+ * Safe, a smart-account wallet), the account's own answer (EIP-1271). An ERC-6492 signature (from an
+ * account not on-chain yet) is refused with the reason: the registry asks the deployed account.
+ * `signer` is set when a plain signature came from someone else.
+ */
+export async function permissionSigned(client: PermissionReader, typedData: Parameters<typeof authorizationDigest>[0], signature: Hex, owner: Hex): Promise<PermissionCheck> {
+  const code = await client.getCode({ address: owner }).catch(() => undefined)
+  const deployed = !!code && code !== '0x'
+
+  if (isErc6492Signature(signature)) {
+    return { ok: false, reason: deployed
+      ? 'This signature was made before the account was on-chain. Sign again, now that it is'
+      : "This smart account isn't on-chain yet, so the registry can't check its signature. Send any transaction from it first (that creates it), then sign again" }
+  }
+
+  const signer = await recoverTypedDataAddress({ ...(typedData as any), signature }).catch(() => undefined)
+  if (signer && signer.toLowerCase() === owner.toLowerCase()) return { ok: true }
+
+  if (deployed) {
+    const answer = await client.readContract({
+      address: owner, abi: ERC1271_ABI, functionName: 'isValidSignature', args: [authorizationDigest(typedData), signature],
+    }).catch(() => undefined)
+    if (answer === ERC1271_MAGIC) return { ok: true }
+    return { ok: false, reason: `The account ${owner} doesn't accept this signature as its own` }
+  }
+  return { ok: false, reason: signer ? `The signature is from ${signer}, not ${owner}` : "The signature can't be read", signer }
 }
 
 /** The hash the registry indexes a record name by (the `kindHash` in `RecordSet` events). */

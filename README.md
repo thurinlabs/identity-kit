@@ -45,7 +45,7 @@ The rest, all covered in the [docs](https://docs.thurin.id/#/sdk):
 - **Proofs:** `identifyProof`, `verifyProof` (GitHub, DNS, Farcaster, Codeberg, Mastodon; a GitHub or Codeberg proof must belong to the account in its URL).
 - **Claim history:** `claimFates`, `claimFateText`, `expiresSoon`, `expiresSoonText`.
 - **Records:** `kindName`, `checkKindName`, `checkRecordValue`, `fetchRecords`, `pickRecords`, `pageRecords`, `parseRecord`, and the `thurin.releases` helpers.
-- **Permissions:** `attestTypedData`, `reattestTypedData`, `updateKeyTypedData`, `revokeTypedData`, `setRecordTypedData`, `markCompromisedTypedData`, for the registry's `…For` writes. To mark an already revoked claim compromised, sign `markCompromisedTypedData` alone.
+- **Permissions:** `attestTypedData`, `reattestTypedData`, `updateKeyTypedData`, `revokeTypedData`, `setRecordTypedData`, `markCompromisedTypedData`, for the registry's `…For` writes. To mark an already revoked claim compromised, sign `markCompromisedTypedData` alone. `permissionSigned(client, typedData, signature, owner)` judges a signed permission the way the registry does: the owner's key (EIP-7702 accounts too), else the owner account's own answer (EIP-1271, for Safes and smart-account wallets).
 - **Keys:** `parsePgpKey`, `leanKey`, `claimSignature`, `sshKeys` (SSH keys as `authorized_keys` lines), `stripEmailUserIDs`, fingerprint and key-ID helpers.
 - **Encrypt:** `encryptionKeyFor` (only the claim that counts, with a valid encryption subkey; says when the key arrived in the last 7 days), `encryptTo` (hides the recipient by default), `encryptRefusalText`, `keyChangedText`.
 - **ENS:** `fetchEnsHint`, `ensHintWrite` for the `id.thurin` record.
