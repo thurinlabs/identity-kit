@@ -21,7 +21,8 @@ beforeAll(async () => { [mine, older, stranger] = await Promise.all([makeKey(), 
 interface Row { key: Made; revoked?: 'compromised' | 'retired'; badSignature?: boolean }
 
 /** A node stub: `rows` as the owner's claims, ENS names in `names`, `down` fails every read. */
-function node(rows: Row[], { names = { [NAME]: OWNER } as Record<string, `0x${string}` | null>, down = false } = {}) {
+type Names = Record<string, `0x${string}` | null>
+function node(rows: Row[], { names = { [NAME]: OWNER } as Names, down = false }: { names?: Names; down?: boolean } = {}) {
   const readContract = vi.fn(async ({ functionName, args }: { functionName: string; args: unknown[] }) => {
     if (down) throw new Error('fetch failed')
     if (functionName === 'claimsOf') return rows.map(r => ({
