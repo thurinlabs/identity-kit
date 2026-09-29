@@ -54,6 +54,8 @@ console.log(r.reason)
 
 `owner` is a `0x` address or an ENS name. Any active, verified claim for the key counts, not only the newest. `mismatch` covers another verified key, a key the owner revoked, and input that isn't a key; a node failure is `unreachable`, never `mismatch`. The key is read before the node is asked anything.
 
+For pages with no build step, `dist/thurin-check.js` (also on each GitHub release) is the same check as one readable file: `ThurinCheck.checkKeyFor({ key, owner, rpc, network })`. Keep `thurin-check.LICENSES.txt` beside it.
+
 The rest, all covered in the [docs](https://docs.thurin.id/#/sdk):
 
 - **Proofs:** `identifyProof`, `verifyProof` (GitHub, DNS, Farcaster, Codeberg, Mastodon; a GitHub or Codeberg proof must belong to the account in its URL).
