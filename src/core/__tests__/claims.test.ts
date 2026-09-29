@@ -84,6 +84,17 @@ describe('keyStanding', () => {
     const good = claim({ verification: { verified: true } })
     expect(keyStanding([good, claim({ index: 1 })])).toEqual({ kind: 'verified', claim: good })
   })
+  it('with a fingerprint: the standing of that key, whatever its case or spacing', () => {
+    const OTHER = '0123456789abcdef0123456789abcdef01234567'
+    const older = claim({ verification: { verified: true } })
+    const newer = claim({ index: 1, fingerprint: OTHER, verification: { verified: true } })
+    expect(keyStanding([older, newer])).toEqual({ kind: 'verified', claim: newer })
+    expect(keyStanding([older, newer], { fingerprint: FP.toUpperCase().replace(/(.{4})/g, '$1 ') })).toEqual({ kind: 'verified', claim: older })
+    const revoked = claim({ index: 2, fingerprint: OTHER, revoked: true, state: 'revoked', revokeReason: 'compromised' })
+    expect(keyStanding([older, revoked], { fingerprint: OTHER })).toEqual({ kind: 'inactive', claim: revoked })
+    expect(keyStanding([older], { fingerprint: OTHER })).toEqual({ kind: 'none', claim: null })
+    expect(keyStanding([older], { fingerprint: 'not a fingerprint' })).toEqual({ kind: 'none', claim: null })
+  })
 })
 
 describe('findOwners', () => {

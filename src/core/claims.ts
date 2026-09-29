@@ -1,5 +1,5 @@
 import { REGISTRY_ABI, REGISTRY_ADDRESS } from './contract'
-import { bytesToFingerprint, fingerprintToBytes, keyIdToBytes, normalizeFingerprint } from './fingerprint'
+import { bytesToFingerprint, fingerprintToBytes, keyIdToBytes, normalizeFingerprint, sameFingerprint } from './fingerprint'
 import { payloadText, verifyAttestation } from './pgp'
 import type { Attestation } from './types'
 
@@ -67,12 +67,14 @@ export async function readClaims(
 
 /** Where an address's key stands. verified: the newest active claim that verifies · not-counted: the
  *  newest active claim, none verify (its `verification` says why) · inactive: only ended claims, the
- *  newest · none: never claimed. */
+ *  newest · none: never claimed. With `fingerprint`, the same for that one key: an address can hold
+ *  several active claims, so a key other than the newest can still be verified. */
 export type KeyStanding =
   | { kind: 'verified' | 'not-counted' | 'inactive'; claim: Attestation }
   | { kind: 'none'; claim: null }
 
-export function keyStanding(claims: readonly Attestation[]): KeyStanding {
+export function keyStanding(claims: readonly Attestation[], { fingerprint }: { fingerprint?: string } = {}): KeyStanding {
+  if (fingerprint !== undefined) claims = claims.filter(c => sameFingerprint(c.fingerprint, fingerprint))
   const active = claims.filter(c => !c.revoked)
   const verified = active.filter(c => c.verification?.verified)
   if (verified.length) return { kind: 'verified', claim: verified[verified.length - 1] }
