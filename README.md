@@ -26,7 +26,7 @@ if (kind === 'verified') console.log(claim.fingerprint, claim.pgpPublicKey)
 if (kind === 'not-counted' && claim.verification) console.log(claimCheckText(claim.verification).label)
 ```
 
-`readClaims` returns every claim, oldest first, and reads and verifies the newest 50 (`{ limit }` changes that; older ones come back with `verification: null`). `keyStanding` picks the newest active claim that verifies. `findOwners(client, { fingerprint })` or `{ keyId }` goes the other way: every address that ever claimed a key. ENS is left to you: resolve the name with viem first. `batch: { multicall: true }` makes the reads one request.
+`readClaims` returns every claim, oldest first, and reads and verifies the newest 50 (`{ limit }` changes that; older ones come back with `verification: null`). `keyStanding` picks the newest active claim that verifies; `keyStanding(claims, { fingerprint })` says the same for one key. `findOwners(client, { fingerprint })` or `{ keyId }` goes the other way: every address that ever claimed a key. ENS is left to you: resolve the name with viem first. `batch: { multicall: true }` makes the reads one request.
 
 In React, wrap it in whatever you use for data, for example:
 
@@ -39,6 +39,20 @@ const { data: claims } = useQuery({ queryKey: ['claims', address], queryFn: () =
 `REGISTRY_ADDRESS` is `0xFa6956c11163517249f8A67F5560a4406B519451`, the same on Ethereum mainnet and Sepolia; `getRegistry(network)` gives each network's chain id, explorer, and default RPC. `REGISTRY_ABI` is the whole contract, writes included.
 
 **Is a key compromised?** Ask the contract: `keyStatus(owner, fingerprint)`. Don't read it off the newest claim, and never count "compromised" across owners: anyone can claim any fingerprint and mark it under their own address.
+
+## Check a key you already have
+
+A key bundled in your page, pasted by a user, or fetched from a keyserver: is it the owner's?
+
+```ts
+import { checkKeyFor } from '@thurinlabs/identity-kit'
+
+const r = await checkKeyFor(client, { key: armoredKey, owner: 'thurinlabs.eth' })
+// r.status: verified · mismatch (don't encrypt to it) · unverified (nothing verified to compare with) · unreachable
+console.log(r.reason)
+```
+
+`owner` is a `0x` address or an ENS name. Any active, verified claim for the key counts, not only the newest. `mismatch` covers another verified key, a key the owner revoked, and input that isn't a key; a node failure is `unreachable`, never `mismatch`. The key is read before the node is asked anything.
 
 The rest, all covered in the [docs](https://docs.thurin.id/#/sdk):
 

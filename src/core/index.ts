@@ -28,6 +28,8 @@ export { encryptionKeyFor, encryptRefusalText, keyChangedText, encryptTo } from 
 export type { EncryptionKey, EncryptionKeyResult, EncryptRefusal } from './encrypt'
 export { CONTRACT_ERROR_TEXT, contractErrorName, contractErrorText } from './contractErrors'
 export type { ClaimReader, KeyStanding } from './claims'
+export { checkKeyFor } from './checkKey'
+export type { KeyCheck, KeyCheckStatus, KeyCheckReader } from './checkKey'
 export {
   MAX_RECORD_BYTES, MAX_KIND_BYTES, KNOWN_KINDS, kindName, checkKindName, checkRecordValue, pickRecords, pageRecords,
   parseReleases, addRelease, renderReleases, parseRecord, fetchRecords,
