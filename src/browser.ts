@@ -1,5 +1,5 @@
 /**
- * The browser bundle (`dist/thurin-check.min.js`): `ThurinCheck.checkKeyFor` for pages with no
+ * The browser bundle (`dist/thurin-check.js`): `ThurinCheck.checkKeyFor` for pages with no
  * build step. Same check as the kit's `checkKeyFor`, with its own client: the network's public
  * node unless `rpc` is given. That node sees which owner is looked up; pass your own to avoid it.
  */

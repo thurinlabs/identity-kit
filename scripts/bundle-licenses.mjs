@@ -1,4 +1,4 @@
-// Writes dist/thurin-check.LICENSES.txt: the license of every package in dist/thurin-check.min.js,
+// Writes dist/thurin-check.LICENSES.txt: the license of every package in dist/thurin-check.js,
 // read from esbuild's metafile (every file the bundle holds), which it then deletes.
 import { readFileSync, readdirSync, writeFileSync, existsSync, rmSync } from 'node:fs'
 
@@ -27,8 +27,8 @@ const packages = [...dirs].map(dir => ({ dir, ...JSON.parse(readFileSync(`${dir}
 const rule = '='.repeat(78)
 const section = (title, body) => `\n${rule}\n${title}\n${rule}\n\n${body}\n`
 
-let out = `Software in thurin-check.min.js, from ${kit.name} ${kit.version}.\n`
-out += `The file is minified. Its source: ${kit.name}@${kit.version} (src/browser.ts) and each package below,\n`
+let out = `Software in thurin-check.js, from ${kit.name} ${kit.version}.\n`
+out += `The file is not minified. Its source: ${kit.name}@${kit.version} (src/browser.ts) and each package below,\n`
 out += `at the npm registry under its name and version. Rebuild it with \`npm run build\` in the kit.\n`
 out += section(`${kit.name}@${kit.version}  (${kit.license})`, licenseText('.'))
 for (const p of packages) out += section(`${p.name}@${p.version}  (${p.license ?? 'see below'})`, licenseText(p.dir))
