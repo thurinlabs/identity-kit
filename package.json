@@ -34,7 +34,8 @@
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepublishOnly": "node -e \"const o=require('child_process').execSync('git status --porcelain').toString().trim(); if (o) { console.error('Refusing to publish: uncommitted changes. npm would ship whatever dist/ holds, not a commit.\\n'+o); process.exit(1) }\" && npm test && npm run build"
+    "test:bundle": "node scripts/check-bundle.mjs",
+    "prepublishOnly": "node -e \"const o=require('child_process').execSync('git status --porcelain').toString().trim(); if (o) { console.error('Refusing to publish: uncommitted changes. npm would ship whatever dist/ holds, not a commit.\\n'+o); process.exit(1) }\" && npm test && npm run build && npm run test:bundle"
   },
   "peerDependencies": {
     "viem": ">=2"

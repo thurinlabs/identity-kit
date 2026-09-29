@@ -9,5 +9,17 @@ export default defineConfig([
     sourcemap: false,   // tsup's CJS maps embed the builder's absolute path
     clean: true,
     external: ['viem'],
-  }
+  },
+  {
+    // One file for pages with no build step: `ThurinCheck.checkKeyFor`, viem and openpgp inside.
+    entry: { 'thurin-check': 'src/browser.ts' },
+    format: ['iife'],
+    globalName: 'ThurinCheck',
+    platform: 'browser',
+    outExtension: () => ({ js: '.min.js' }),
+    minify: true,
+    noExternal: [/.*/],
+    sourcemap: false,
+    clean: false,
+  },
 ])
