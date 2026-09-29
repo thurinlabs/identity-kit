@@ -21,5 +21,7 @@ export default defineConfig([
     noExternal: [/.*/],
     sourcemap: false,
     clean: false,
+    metafile: true,   // scripts/bundle-licenses.mjs lists every package the bundle holds from it
+    banner: { js: '/*! thurin-check.min.js, @thurinlabs/identity-kit (MIT). Bundles openpgp (LGPL-3.0) and MIT packages: see thurin-check.LICENSES.txt */' },
   },
 ])

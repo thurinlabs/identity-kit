@@ -31,7 +31,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && node scripts/bundle-licenses.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:bundle": "node scripts/check-bundle.mjs",
