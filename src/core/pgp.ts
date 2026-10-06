@@ -125,6 +125,10 @@ export async function parsePgpKey(armoredKey: PgpInput): Promise<PGPKeyInfo | nu
 
         if (cert.rawNotations) {
           for (const n of cert.rawNotations) {
+            // Only notations the key marks human-readable: binary ones (openpgp.js's random
+            // salt@notations.openpgpjs.org on every signature) are no proof and read as garbage.
+            // The email check (notationEmails) still scans them all.
+            if (n.humanReadable === false) continue
             const name =
               typeof n.name === 'string' ? n.name : new TextDecoder().decode(n.name)
             const value =

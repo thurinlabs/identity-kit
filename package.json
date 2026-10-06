@@ -1,6 +1,6 @@
 {
   "name": "@thurinlabs/identity-kit",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Check Thurin.id claims (PGP keys on Ethereum addresses) in Node, workers, or the browser",
   "repository": {
     "type": "git",
